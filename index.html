@@ -1,0 +1,945 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0c8599">
+<meta name="description" content="جزيرة ياسين: تطبيق تعليمي وترفيهي للأطفال بأربع لغات">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<title>جزيرة ياسين</title>
+<style>
+@font-face{font-family:'Baloo Bhaijaan 2';src:url('fonts/Baloo.ttf') format('truetype');font-weight:400 800;font-display:swap}
+@font-face{font-family:'Cairo';src:url('fonts/Cairo.ttf') format('truetype');font-weight:200 1000;font-display:swap}
+*,*::before,*::after{box-sizing:border-box}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);height:100%}
+body{margin:0;font-size:14px}
+/* Layout: adventure-island map — teal sea bar on top, living canvas island, sand-colored sheet of big round buttons below */
+:root{--sea:#0c8599;--sea-d:#0b6e7f;--sand:#fff4d6;--sand-2:#ffe8a3;--coral:#ff6b6b;--ink:#0b3d4a;--leaf:#2f9e44;--sheet:#fffdf6;--soft:#e6fcf5;--muted:#5c7c85;--good:#2f9e44;--bad:#e03131;
+  --display:'Baloo Bhaijaan 2','Cairo',system-ui,sans-serif;--body:'Cairo',system-ui,sans-serif;color-scheme:light}
+html,body{height:100%}
+[hidden]{display:none!important}
+body{background:var(--sea);color:var(--ink);font-family:var(--body);overflow:hidden;-webkit-tap-highlight-color:transparent;user-select:none}
+#app{height:100%;display:flex;flex-direction:column}
+.bar{position:relative;z-index:30;display:flex;align-items:center;gap:8px;padding-block:8px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));background:linear-gradient(180deg,var(--sea),var(--sea-d));color:#fff}
+.bar h1{font-family:var(--display);font-weight:800;font-size:clamp(20px,3.6vw,30px);margin:0;flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.3}
+.ib{border:0;background:rgba(255,255,255,.18);color:#fff;min-width:44px;height:44px;border-radius:50%;font-size:22px;cursor:pointer;display:grid;place-items:center;font-family:var(--display);font-weight:800;padding:0 10px}
+.ib:focus-visible,.tile:focus-visible,.candy:focus-visible,.ans:focus-visible,.chip:focus-visible,.task:focus-visible,.pchip:focus-visible{outline:4px solid #ffd43b;outline-offset:2px}
+.lang{display:flex;gap:4px;border-radius:999px;font-size:16px}
+.lang svg{width:20px;height:20px}
+.stars{display:flex;align-items:center;gap:6px;background:#ffd43b;color:var(--ink);border-radius:999px;padding:3px 14px 3px 10px;font-weight:800;font-size:19px;font-variant-numeric:tabular-nums}
+.langmenu{position:absolute;top:calc(100% + 6px);inset-inline-end:max(16px,env(safe-area-inset-right,0px));background:#fff;border-radius:18px;box-shadow:0 10px 30px rgba(11,61,74,.3);padding:6px;display:flex;flex-direction:column;gap:4px;min-width:160px}
+.langmenu button{border:0;background:transparent;font-family:var(--body);font-weight:800;font-size:18px;color:var(--ink);padding:10px 14px;border-radius:12px;cursor:pointer;text-align:start}
+.langmenu button[aria-current="true"]{background:#ffd43b}
+.stage{position:relative;flex:1;min-height:150px;overflow:hidden;background:#74c0fc}
+#cv{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:pointer}
+.sheet{background:var(--sheet);border-radius:30px 30px 0 0;padding-block:16px 18px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));z-index:2;max-height:56%;overflow-y:auto;box-shadow:0 -8px 0 var(--sand-2)}
+#s-home{max-height:40%}
+.inner{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:12px;width:100%}
+.inner.center{align-items:center;text-align:center}
+.tiles{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+#zoneGrid{grid-template-columns:repeat(4,1fr)}
+@media (max-width:640px){.tiles,#zoneGrid{grid-template-columns:repeat(3,1fr)}#zoneGrid{grid-template-columns:repeat(2,1fr)}}
+.tile{border:0;border-radius:26px;padding:10px 8px 12px;cursor:pointer;color:#fff;font-family:var(--display);font-weight:800;font-size:clamp(15px,2.2vw,20px);display:flex;flex-direction:column;align-items:center;gap:2px;box-shadow:0 6px 0 rgba(0,0,0,.18);line-height:1.25;text-wrap:balance;transition:transform .12s}
+.tile:active{transform:translateY(4px);box-shadow:0 2px 0 rgba(0,0,0,.18)}
+.tile canvas{width:56px;height:56px}
+.tile small{font-family:var(--body);font-weight:600;font-size:13px;opacity:.95}
+.tile.soon{filter:saturate(.45);opacity:.75}
+.candy{border:0;border-radius:999px;padding:10px 22px;font-family:var(--display);font-weight:800;font-size:19px;cursor:pointer;background:#ffd43b;color:var(--ink);box-shadow:0 5px 0 #e0a800}
+.candy.alt{background:var(--soft);box-shadow:0 5px 0 #b2f2e2}
+.candy:active{transform:translateY(3px);box-shadow:0 2px 0 #e0a800}
+.row{display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap}
+.chip{border:0;border-radius:999px;padding:7px 16px;font-family:var(--body);font-weight:800;font-size:16px;cursor:pointer;background:var(--soft);color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--sea);color:#fff}
+.q{font-weight:800;font-size:clamp(18px,3vw,26px);text-align:center;margin:0;text-wrap:balance}
+.big{font-family:var(--display);font-weight:800;font-size:clamp(30px,6vw,52px);color:var(--sea);text-align:center;margin:0;line-height:1.2}
+.tdesc{margin:0;text-align:center;font-weight:600;font-size:clamp(15px,2.3vw,19px);color:var(--muted)}
+.msg{min-height:28px;text-align:center;font-weight:800;font-size:18px;margin:0}
+.msg.good{color:var(--good)}.msg.bad{color:var(--bad)}
+.answers{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.answers.six{grid-template-columns:repeat(6,1fr)}
+.answers.two{grid-template-columns:1fr 1fr}
+@media (max-width:640px){.answers{grid-template-columns:repeat(2,1fr)}.answers.six{grid-template-columns:repeat(3,1fr)}.answers.two{grid-template-columns:1fr}}
+.ans{border:0;border-radius:20px;padding:8px 8px 10px;cursor:pointer;font-family:var(--body);font-weight:800;font-size:17px;color:var(--ink);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;box-shadow:0 5px 0 rgba(0,0,0,.12);min-height:64px}
+.ans.txt{font-size:clamp(18px,2.8vw,26px)}
+.ans.wide{font-size:clamp(16px,2.4vw,20px);line-height:1.5;padding:12px}
+.ans.ok{outline:5px solid var(--good)}.ans.no{outline:5px solid var(--bad);animation:shake .4s}
+.big-e{font-size:38px;line-height:1.1}
+@keyframes shake{25%{transform:translateX(-8px)}50%{transform:translateX(8px)}75%{transform:translateX(-4px)}}
+.dots{display:flex;gap:6px;justify-content:center}
+.dots i{width:12px;height:12px;border-radius:50%;background:#c3fae8}
+.dots i.done{background:#ffd43b}.dots i.miss{background:#ffc9c9}.dots i.now{outline:3px solid var(--sea)}
+.meter{height:14px;border-radius:999px;background:var(--soft);overflow:hidden;max-width:520px;width:100%;margin:0 auto}
+.meter i{display:block;height:100%;width:0;background:linear-gradient(90deg,#ffd43b,#20c997);transition:width .3s}
+.prog{display:grid;grid-template-columns:repeat(14,1fr);gap:4px;direction:ltr}
+@media (max-width:640px){.prog{grid-template-columns:repeat(7,1fr)}}
+.pchip,.pslot{aspect-ratio:1;border-radius:10px;display:grid;place-items:center;font-size:20px}
+.pchip{border:0;background:#fff4e6;cursor:pointer;box-shadow:0 3px 0 #ffd8a8;padding:0}
+.pchip.on{background:#ffd43b}
+.pslot{border:2px dashed #c3fae8}
+#rbBtns{direction:ltr}
+#rbBtns button[data-d]{width:56px;height:56px;border-radius:16px;border:0;background:#d0ebff;font-size:28px;cursor:pointer;box-shadow:0 4px 0 #a5d8ff}
+.tasks{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media (max-width:640px){.tasks{grid-template-columns:1fr}}
+.task{display:flex;align-items:center;gap:12px;border:0;border-radius:18px;background:var(--soft);padding:10px 14px;cursor:pointer;font-family:var(--body);font-weight:800;font-size:18px;color:var(--ink);text-align:start}
+.task .te{font-size:30px}.task .tn{flex:1;min-width:0}.task .tc{width:32px;height:32px;border-radius:50%;background:#fff;display:grid;place-items:center;color:#fff;font-size:20px}
+.task.on{background:#d3f9d8}.task.on .tc{background:var(--good)}
+.glist{list-style:none;margin:0;padding:0;display:grid;gap:10px}
+@media (min-width:900px){.glist{grid-template-columns:1fr 1fr}}
+.glist li{display:flex;gap:12px;align-items:flex-start;background:var(--soft);border-radius:18px;padding:10px 14px}
+.glist li>div:last-child{min-width:0}
+.gic{flex:0 0 50px;height:50px;border-radius:16px;background:var(--sea);display:grid;place-items:center;font-size:28px}
+.glist h3{margin:0;font-family:var(--display);font-size:19px;color:var(--sea)}
+.glist p{margin:2px 0 0;font-weight:600;line-height:1.65;font-size:15px}
+#s-guide{max-height:70%}
+#s-gen{max-height:58%}
+#s-parent{max-height:70%}
+button.stars{border:0;cursor:pointer;font-family:var(--body)}
+.mission{background:linear-gradient(90deg,#fff3bf,#e6fcf5);border-radius:20px;padding:8px 12px;display:flex;flex-direction:column;gap:6px}
+.mhead{display:flex;justify-content:space-between;align-items:center;font-family:var(--display);font-weight:800;font-size:18px;color:var(--sea)}
+.mcount{background:#fff;border-radius:999px;padding:0 12px;font-variant-numeric:tabular-nums}
+.mchip.ok{background:#d3f9d8}
+.mission .tdesc{font-size:14px}
+.stkgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:8px}
+.stk{aspect-ratio:1;border-radius:16px;background:var(--soft);display:grid;place-items:center;font-size:clamp(24px,4vw,36px);opacity:.45}
+.stk.got{opacity:1;background:#fff3bf}
+.gatein{width:120px;font-size:24px;font-weight:800;text-align:center;border:3px solid #b2f2e2;border-radius:14px;padding:6px;font-family:var(--body);color:var(--ink);background:#fff}
+.report{display:grid;gap:6px}
+.rrow{display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;background:var(--soft);border-radius:14px;padding:8px 12px;font-weight:800}
+.rrow .num{font-variant-numeric:tabular-nums;color:var(--muted);font-size:14px}
+.strip{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 8px}
+.ichip{flex:0 0 auto;border:0;border-radius:16px;background:var(--soft);font-size:30px;width:58px;height:58px;cursor:pointer;padding:0}
+.ichip.sel{background:#ffd43b;outline:3px solid var(--sea)}
+.keys{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;direction:ltr}
+.key{border:0;border-radius:14px;height:130px;color:#fff;font-family:var(--display);font-weight:800;font-size:18px;cursor:pointer;box-shadow:0 6px 0 rgba(0,0,0,.25);display:flex;align-items:flex-end;justify-content:center;padding:0 0 10px;touch-action:manipulation;text-shadow:0 2px 0 rgba(0,0,0,.3)}
+@media (max-width:640px){.key{height:96px;font-size:14px}}
+.key:active{transform:translateY(4px)}
+.key.glow{outline:6px solid #fff;outline-offset:2px;animation:glow .8s infinite}
+@keyframes glow{50%{outline-color:#ffd43b}}
+.swatch2{border:0;border-radius:20px;width:110px;height:80px;color:#fff;font-family:var(--display);font-weight:800;font-size:18px;cursor:pointer;box-shadow:0 5px 0 rgba(0,0,0,.2);text-shadow:0 2px 0 rgba(0,0,0,.3)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px 16px}
+.stat{display:flex;flex-direction:column;gap:4px;font-weight:800}
+.stat .meter{margin:0;max-width:none}
+@media (prefers-reduced-motion:reduce){.key.glow{animation:none}}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:#fff;padding:8px 18px;border-radius:999px;font-weight:800;z-index:40;max-width:calc(100% - 32px);text-align:center}
+@media (max-width:560px){.bar{gap:5px}.ib{min-width:36px;height:36px;font-size:18px;padding:0 7px}.stars{font-size:15px;padding:2px 9px 2px 7px}.bar h1{font-size:18px}.lang{font-size:14px}}
+@media (prefers-reduced-motion:reduce){.ans.no{animation:none}.tile{transition:none}}
+</style>
+</head>
+<body>
+
+<div id="app" dir="rtl">
+  <header class="bar">
+    <button class="ib" id="back" hidden>&#8594;</button>
+    <h1 id="ttl">جزيرة ياسين</h1>
+    <button class="ib" id="helpBtn">?</button>
+    <button class="ib" id="parBtn" aria-label="parents">⚙️</button>
+    <button class="ib" id="musBtn">🎵</button>
+    <button class="ib lang" id="langBtn" aria-haspopup="true"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18" fill="none" stroke="currentColor" stroke-width="2"/></svg><span>ع</span></button>
+    <div class="langmenu" id="langMenu" hidden><button data-l="ar" lang="ar">العربية</button><button data-l="fr" lang="fr">Français</button><button data-l="en" lang="en">English</button><button data-l="es" lang="es">Español</button></div>
+    <button class="stars" id="starsBtn" aria-label="stars">⭐<span id="starN">0</span></button>
+  </header>
+
+  <div class="stage" id="stage"><canvas id="cv"></canvas></div>
+
+  <section class="sheet" id="s-home"><div class="inner"><div class="mission" id="mission"></div><div class="tiles" id="homeGrid"></div></div></section>
+  <section class="sheet" id="s-zone" hidden><div class="inner"><div class="tiles" id="zoneGrid"></div></div></section>
+  <section class="sheet" id="s-feel" hidden><div class="inner"><div class="row" id="feelTabs"></div><div class="inner" id="feelPane"></div></div></section>
+  <section class="sheet" id="s-move" hidden><div class="inner center"><p class="q" id="mvName"></p><p class="big" id="mvTime"></p><div class="meter"><i id="mvMeter"></i></div><div class="row" id="mvList"></div>
+    <div class="row"><button class="candy" id="mvStart"></button><button class="candy alt" id="mvSkip" hidden></button></div></div></section>
+  <section class="sheet" id="s-robot" hidden><div class="inner"><p class="q" id="rbLevel"></p><div class="prog" id="rbProg"></div>
+    <div class="row" id="rbBtns"><button data-d="L" aria-label="left">⬅️</button><button data-d="U" aria-label="up">⬆️</button><button data-d="D" aria-label="down">⬇️</button><button data-d="R" aria-label="right">➡️</button><button class="candy" id="rbPlay" aria-label="play">▶</button><button class="candy alt" id="rbClear"></button></div>
+    <p class="msg" id="rbMsg"></p><div class="row"><button class="candy" id="rbNext" hidden></button></div></div></section>
+  <section class="sheet" id="s-routine" hidden><div class="inner"><div class="row" id="rtTabs"></div><div class="meter" id="rtMeterW"><i id="rtMeter"></i></div><div class="tasks" id="rtList"></div>
+    <div class="inner center" id="rtTeeth" hidden><p class="q" id="rtTeethTip"></p><button class="candy" id="rtTeethBtn"></button></div></div></section>
+  <section class="sheet" id="s-safe" hidden><div class="inner"><div class="dots" id="sfDots"></div><p class="q" id="sfQ"></p><div class="answers two" id="sfOpts"></div><p class="msg" id="sfWhy"></p>
+    <div class="row"><button class="candy" id="sfNext" hidden></button></div><p class="tdesc" id="sfNums" style="font-size:14px"></p></div></section>
+  <section class="sheet" id="s-math" hidden><div class="inner"><div class="dots" id="mtDots"></div><p class="q" id="mtQ"></p><div class="answers" id="mtOpts"></div><p class="msg" id="mtMsg"></p></div></section>
+  <section class="sheet" id="s-treasure" hidden><div class="inner"><p class="q" id="trInfo"></p><div class="stkgrid" id="trGrid"></div><p class="tdesc" id="trHintP"></p></div></section>
+  <section class="sheet" id="s-gate" hidden><div class="inner center"><p class="q" id="gateQ"></p><div class="row"><input id="gateIn" class="gatein" type="number" inputmode="numeric" aria-label="?"><button class="candy" id="gateOk"></button></div><p class="msg bad" id="gateMsg"></p></div></section>
+  <section class="sheet" id="s-parent" hidden><div class="inner" id="parPane"></div></section>
+  <section class="sheet" id="s-rest" hidden><div class="inner center"><p class="big" id="restT"></p><p class="q" id="restM"></p><div class="row"><button class="candy alt" id="restParent"></button></div></div></section>
+  <section class="sheet" id="s-gen" hidden><div class="inner" id="genPane"></div></section>
+  <input type="file" id="pzFile" accept="image/*" hidden>
+  <section class="sheet" id="s-done" hidden><div class="inner center"><p class="big" id="doneT"></p><p class="q" id="doneS"></p><div class="row"><button class="candy" id="again"></button><button class="candy alt" id="back2"></button></div></div></section>
+  <section class="sheet" id="s-guide" hidden><div class="inner"><ul class="glist" id="guideList"></ul></div></section>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+'use strict';
+const PI=Math.PI,BEAT0=0,BEAT=.6;const $=id=>document.getElementById(id);
+const cv=$('cv');let c=cv.getContext('2d');let W=1600,H=1000,K=1;
+let lang='ar';try{const l=localStorage.getItem('yas_lang');if(['fr','en','es'].includes(l))lang=l}catch(e){}
+const L4=(ar,fr,en,es)=>({ar,fr,en,es});const tx=o=>o?(o[lang]||o.ar):'';
+const UI={ar:{},fr:{},en:{},es:{}};function addUI(o){for(const k in o)for(const l of['ar','fr','en','es'])UI[l][k]=o[k][['ar','fr','en','es'].indexOf(l)]}
+const T=(k,...a)=>{const v=UI[lang][k];return typeof v==='function'?v(...a):v};
+addUI({
+ app:['جزيرة ياسين','L’île de Yassine','Yassine’s Island','La isla de Yassine'],
+ sub:['نستكشف ونتعلّم مع نجمة','On explore et on apprend avec Najma','Explore and learn with Najma','Exploramos y aprendemos con Najma'],
+ soon:['قيد البناء','En construction','Coming soon','En construcción'],
+ soonMsg:['هذا المكان قيد البناء… قريبًا!','Cet endroit est en construction… bientôt !','This place is being built… coming soon!','Este lugar está en construcción… ¡pronto!'],
+ apps:[n=>`${n} ألعاب`,n=>`${n} jeux`,n=>`${n} games`,n=>`${n} juegos`],
+ praise:[['أحسنت!','رائع!','ممتاز!'],['Bravo !','Super !','Excellent !'],['Well done!','Great!','Excellent!'],['¡Muy bien!','¡Genial!','¡Excelente!']],
+ wrong:['حاول مرة أخرى!','Essaie encore !','Try again!','¡Inténtalo otra vez!'],
+ result:['النتيجة','Résultat','Result','Resultado'],again:['العب مرة أخرى','Rejouer','Play again','Jugar otra vez'],backPlace:['العودة إلى المكان','Retour','Back','Volver'],
+ score:[(s,n)=>`أجبت إجابة صحيحة عن ${s} من ${n}`,(s,n)=>`${s} bonnes réponses sur ${n}`,(s,n)=>`${s} out of ${n} correct`,(s,n)=>`${s} de ${n} correctas`],
+ doneGood:['أحسنت!','Bravo !','Well done!','¡Muy bien!'],
+ noTTS:['القراءة الصوتية غير متاحة على هذا الجهاز','Lecture vocale indisponible sur cet appareil','Voice reading isn’t available on this device','La lectura en voz alta no está disponible'],
+ back:['رجوع','Retour','Back','Volver'],musicOn:['إيقاف الموسيقى','Couper la musique','Music off','Apagar música'],musicOff:['تشغيل الموسيقى','Mettre la musique','Music on','Encender música'],
+ langBtn:['ع','FR','EN','ES'],next:['التالي','Suivant','Next','Siguiente'],start:['ابدأ','C’est parti','Start','Empezar'],guide:['دليل الجزيرة','Guide de l’île','Island guide','Guía de la isla'],
+ tapPlace:['اختر مكانًا في الجزيرة','Choisis un endroit de l’île','Pick a place on the island','Elige un lugar de la isla']});
+
+/* helpers */
+const clamp=(x,a=0,b=1)=>Math.max(a,Math.min(b,x));const ease=x=>{x=clamp(x);return 1-Math.pow(1-x,3)};
+const elastic=x=>{x=clamp(x);if(x===0||x===1)return x;return Math.pow(2,-10*x)*Math.sin((x*10-.75)*(2*PI/3))+1};
+const pop=(t,t0,d=.6)=>elastic((t-t0)/d);const bounce=t=>Math.abs(Math.sin(PI*(t/BEAT)));
+function circ(x,y,r,col,a=1){c.globalAlpha=a;c.fillStyle=col;c.beginPath();c.arc(x,y,Math.max(r,0),0,2*PI);c.fill();c.globalAlpha=1}
+function rr(x,y,w,h,r){c.beginPath();c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath()}
+function vgrad(y0,y1,st){const g=c.createLinearGradient(0,y0,0,y1);st.forEach(([o,col])=>g.addColorStop(o,col));c.fillStyle=g;c.fillRect(0,y0,W,y1-y0)}
+function hill(y,amp,f,ph,col){c.beginPath();c.moveTo(0,H);for(let x=0;x<=W+20;x+=20)c.lineTo(x,y+amp*Math.sin(x/W*f*2*PI+ph));c.lineTo(W,H);c.closePath();c.fillStyle=col;c.fill()}
+function mix(a,b,k){const p=h=>[1,3,5].map(i=>parseInt(h.substr(i,2),16));const A=p(a),B=p(b);k=clamp(k);return'rgb('+A.map((v,i)=>Math.round(v*(1-k)+B[i]*k)).join(',')+')'}
+const darker=(h,k=.35)=>mix(h,'#000000',k);
+function rnd(s){return()=>{s=(s*16807)%2147483647;return(s-1)/2147483646}}const R=rnd(11);const P=Array.from({length:200},()=>[R(),R(),R(),R(),R(),R()]);
+function shuffle(a){a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a}
+function emoji(ch,x,y,size){c.save();c.font=`${size}px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif`;c.textAlign='center';c.textBaseline='middle';c.fillStyle='#123';c.fillText(ch,x,y+size*.06);c.restore()}
+function label(txt,x,y,size,fill='#fff',stroke='#0b3d4a',font='Baloo'){c.save();c.font=`800 ${size}px ${font==='Baloo'?"'Baloo Bhaijaan 2','Cairo'":"'Cairo'"},sans-serif`;c.direction=lang==='ar'?'rtl':'ltr';c.textAlign='center';c.textBaseline='middle';c.lineJoin='round';c.lineWidth=size*.16;c.strokeStyle=stroke;c.strokeText(txt,x,y);c.fillStyle=fill;c.fillText(txt,x,y);c.restore()}
+function sun(x,y,r,t){const g=c.createRadialGradient(x,y,r*.5,x,y,r*2.4);g.addColorStop(0,'rgba(255,240,140,.5)');g.addColorStop(1,'rgba(255,240,140,0)');c.fillStyle=g;c.beginPath();c.arc(x,y,r*2.4,0,2*PI);c.fill();
+  c.save();c.translate(x,y);c.rotate(t*.3);c.fillStyle='#ffb703';for(let i=0;i<10;i++){c.save();c.rotate(i*PI/5);c.beginPath();c.moveTo(-r*.18,-r*1.05);c.lineTo(0,-r*1.5);c.lineTo(r*.18,-r*1.05);c.closePath();c.fill();c.restore()}c.restore();circ(x,y,r,'#ffd60a')}
+function cloud(x,y,s,col='#fff'){[[-60,10,45],[-15,-20,60],[45,0,50],[85,18,35],[0,25,45]].forEach(([dx,dy,r])=>circ(x+dx*s,y+dy*s,r*s,col))}
+function palm(x,y,s,t){c.save();c.translate(x,y);c.scale(s,s);c.beginPath();c.moveTo(-10,0);c.quadraticCurveTo(10,-120,30,-230);c.lineTo(46,-228);c.quadraticCurveTo(26,-120,12,0);c.closePath();c.fillStyle='#a0703c';c.fill();
+  c.translate(38,-232);for(let i=0;i<6;i++){c.save();c.rotate(-PI+i*PI/5+.05*Math.sin(t*2+i));c.beginPath();c.moveTo(0,0);c.quadraticCurveTo(60,-40,120,10);c.quadraticCurveTo(60,-10,0,0);c.fillStyle=i%2?'#2f9e44':'#40c057';c.fill();c.restore()}circ(0,8,10,'#7a4a1c');circ(14,6,9,'#7a4a1c');c.restore()}
+function tree(x,y,s,col,col2){c.save();c.translate(x,y);c.scale(s,s);c.fillStyle='#8b5a2b';c.fillRect(-14,-170,28,170);[[-60,-200,70,col],[60,-205,70,col2||col],[0,-260,90,col],[-30,-165,55,col2||col],[35,-160,55,col]].forEach(([dx,dy,r,cc])=>circ(dx,dy,r,cc));c.restore()}
+function confetti(t,t0,n=80){const cols=['#ff6b6b','#ffd43b','#69db7c','#4dabf7','#da77f2','#ff922b'];for(let i=0;i<n;i++){const a=P[i];const y=((t-t0)*(120+a[1]*160)+a[2]*H*1.2)%(H+100)-50,x=a[0]*W+40*Math.sin(t*(1+a[3]*2)+i);
+  c.save();c.translate(x,y);c.rotate(t*(2+a[4]*4)+i);c.scale(1,Math.abs(Math.sin(t*5+i))+.2);c.fillStyle=cols[i%6];c.fillRect(-8,-5,16,10);c.restore()}}
+function balloon(x,y,r,col){c.beginPath();c.ellipse(x,y,r*.78,r*.95,0,0,2*PI);c.fillStyle=col;c.fill();c.beginPath();c.moveTo(x-r*.1,y+r*1.05);c.lineTo(x+r*.1,y+r*1.05);c.lineTo(x,y+r*.9);c.closePath();c.fill();c.beginPath();c.ellipse(x-r*.3,y-r*.4,r*.13,r*.25,-.5,0,2*PI);c.fillStyle='rgba(255,255,255,.55)';c.fill()}
+function pedestal(x,y,r){c.beginPath();c.ellipse(x,y+r*1.28,r*.95,r*.18,0,0,2*PI);c.fillStyle='rgba(0,0,0,.12)';c.fill();circ(x,y,r*1.22,'#ffffff',.92)}
+function bubbleQ(bx,by){circ(bx,by,105,'#fff');circ(bx-105,by+105,24,'#fff');circ(bx-142,by+142,13,'#fff');label('?'.replace('?',lang==='ar'?'؟':'?'),bx,by+8,160,'#0c8599','#fff')}
+
+/* Najma the little star */
+function najma(x,y,s,t,mood){c.save();c.translate(x,y+10*Math.sin(t*2.2));c.scale(s,s);c.rotate(.12*Math.sin(t*1.7));
+  const g=c.createRadialGradient(0,0,10,0,0,120);g.addColorStop(0,'rgba(255,236,153,.7)');g.addColorStop(1,'rgba(255,236,153,0)');c.fillStyle=g;c.beginPath();c.arc(0,0,120,0,2*PI);c.fill();
+  c.beginPath();for(let i=0;i<10;i++){const a=-PI/2+i*PI/5,rad=i%2?34:70;c.lineTo(rad*Math.cos(a),rad*Math.sin(a))}c.closePath();c.fillStyle='#ffd43b';c.fill();c.lineWidth=6;c.strokeStyle='#f59f00';c.lineJoin='round';c.stroke();
+  const blink=(t%3.7)<.12;for(const sx of[-1,1]){if(blink){c.beginPath();c.moveTo(sx*14-7,0);c.lineTo(sx*14+7,0);c.lineWidth=4;c.strokeStyle='#5c3c1c';c.stroke()}else{circ(sx*14,0,7,'#5c3c1c');circ(sx*14+2,-2,2.5,'#fff')}}
+  circ(-26,14,7,'#ff8fab',.6);circ(26,14,7,'#ff8fab',.6);c.beginPath();c.arc(0,10,10,.1*PI,.9*PI);c.lineWidth=4;c.strokeStyle='#5c3c1c';c.lineCap='round';c.stroke();c.restore();
+  for(let i=0;i<4;i++){const a=t*2+i*PI/2;emoji('✨',x+90*s*Math.cos(a),y+60*s*Math.sin(a),22*s)}}
+
+/* Yassine */
+const SKIN='#e0ac69';
+function yassine(x,y,s,t,o={}){const pants=o.pants||'#1864ab',shirt=o.shirt||'#20c997',wave=o.wave??1;
+  const by=-bounce(t)*12-(o.jump||0);c.save();c.translate(x,y+by);c.scale(s,s);if(o.bend)c.rotate(o.bend);if(o.flipX!=null)c.scale(Math.abs(o.flipX)<.08?.08*Math.sign(o.flipX||1):o.flipX,1);if(o.squat)c.scale(1,1-.22*o.squat);c.lineCap='round';
+  c.save();c.translate(0,-by/s+4);c.scale(1,.18);c.beginPath();c.arc(0,0,70,0,2*PI);c.fillStyle='rgba(0,0,0,.15)';c.fill();c.restore();
+  const sw=o.legT!=null?Math.sin(o.legT*PI)*40:Math.sin(t*PI/BEAT)*6;
+  for(const sx of[-1,1]){if(o.legUp&&sx>0){c.beginPath();c.moveTo(20,-95);c.lineTo(70,-75);c.lineTo(45,-40);c.lineWidth=24;c.strokeStyle=pants;c.stroke();c.beginPath();c.ellipse(52,-36,20,12,-.4,0,2*PI);c.fillStyle='#fff';c.fill();continue}
+    const lx=sx*22+sx*sw*.3*(o.legT!=null?1.6:1),ly=o.legT!=null&&sx*Math.sin(o.legT*PI)>0?-30:-12;c.beginPath();c.moveTo(sx*20,-95);c.lineTo(lx,ly);c.lineWidth=24;c.strokeStyle=pants;c.stroke();
+    c.beginPath();c.ellipse(lx+sx*6,ly+6,22,13,0,0,2*PI);c.fillStyle='#fff';c.fill();c.fillStyle='#fa5252';c.fillRect(lx+sx*6-20,ly+8,40,5)}
+  // backpack
+  rr(-48,-200,96,110,22);c.fillStyle='#e8590c';c.fill();
+  rr(-55,-205,110,125,30);c.fillStyle=shirt;c.fill();c.save();rr(-55,-205,110,125,30);c.clip();c.fillStyle='rgba(255,255,255,.35)';for(let yy=-190;yy<-80;yy+=28)c.fillRect(-60,yy,120,12);c.restore();
+  rr(-55,-112,110,30,10);c.fillStyle=pants;c.fill();c.strokeStyle='#e8590c';c.lineWidth=8;c.beginPath();c.moveTo(-30,-205);c.lineTo(-34,-120);c.moveTo(30,-205);c.lineTo(34,-120);c.stroke();
+  function arm(sx,ang,item){const sxp=sx*50,syp=-188,ex=sxp+82*Math.cos(ang),ey=syp+82*Math.sin(ang);c.beginPath();c.moveTo(sxp,syp);c.lineTo(ex,ey);c.lineWidth=22;c.strokeStyle=shirt;c.stroke();circ(ex,ey,14,SKIN);
+    if(item==='brush'){c.save();c.translate(ex,ey);c.rotate(-.6+.4*Math.sin(t*14));rr(-6,-60,12,60,5);c.fillStyle='#4dabf7';c.fill();rr(-9,-74,18,16,4);c.fillStyle='#fff';c.fill();c.restore()}}
+  let wa=-PI/4-.45*Math.sin(t*7)*wave-.3*(1-wave);if(wave<.05)wa=PI/2-.5;
+  arm(1,o.armA!=null?o.armA:wa);arm(-1,o.armB!=null?o.armB:PI/2+.35+.08*Math.sin(t*PI/BEAT),o.item);
+  const hx=0,hy=-268;circ(hx-60,hy+5,14,SKIN);circ(hx+60,hy+5,14,SKIN);circ(hx,hy,64,SKIN);
+  // hair + cap
+  [[-52,-10,16],[52,-10,16],[-44,8,12],[44,8,12]].forEach(([dx,dy,r])=>circ(hx+dx,hy+dy,r,'#5c3317'));
+  c.beginPath();c.arc(hx,hy-14,66,PI,2*PI);c.closePath();c.fillStyle='#1c7ed6';c.fill();rr(-10,hy-86,20,14,6);c.fillStyle='#ffd43b';c.fill();
+  c.beginPath();c.ellipse(hx+40,hy-14,52,13,-.08,0,2*PI);c.fillStyle='#1864ab';c.fill();label('Y',hx-6,hy-44,40,'#ffd43b','#1864ab');
+  // freckles
+  for(const sx of[-1,1])for(let k=0;k<3;k++)circ(hx+sx*(34+k*6),hy+18+(k%2)*5,2.5,'#b0743b');
+  const blink=o.mood==='calm'||(t%3.3)<.12;
+  for(const sx of[-1,1]){const ex=hx+sx*23,ey=hy-2;if(blink){c.beginPath();c.moveTo(ex-11,ey);c.lineTo(ex+11,ey);c.lineWidth=4;c.strokeStyle='#2b1a10';c.stroke()}
+    else{c.beginPath();c.ellipse(ex,ey,13,16,0,0,2*PI);c.fillStyle='#fff';c.fill();circ(ex+2,ey+2,8,'#3b2a1a');circ(ex+5,ey-2,3,'#fff')}}
+  for(const sx of[-1,1])circ(hx+sx*40,hy+26,10,'#ff6b81',.35);
+  if(o.mood)drawMood(o.mood,hx,hy,t);
+  else{const op=o.sing===false?.35:.3+.7*Math.abs(Math.sin(t*9.3))*Math.abs(Math.sin(t*3.1+1));c.save();c.translate(hx,hy+28);c.scale(1,.4+.6*op);c.beginPath();c.arc(0,0,15,0,PI);c.closePath();c.restore();c.fillStyle='#8a1c2b';c.fill()}
+  c.restore()}
+function drawMood(md,hx,hy,t){const brow=(sx,yo,yi)=>{c.beginPath();c.moveTo(hx+sx*38,hy+yo);c.lineTo(hx+sx*12,hy+yi);c.lineWidth=6;c.strokeStyle='#3b2a1a';c.lineCap='round';c.stroke()};
+  if(md==='happy'){c.beginPath();c.arc(hx,hy+20,22,.12*PI,.88*PI);c.closePath();c.fillStyle='#8a1c2b';c.fill();c.beginPath();c.arc(hx,hy+36,9,0,PI);c.fillStyle='#ff8787';c.fill()}
+  else if(md==='sad'){brow(-1,-30,-38);brow(1,-30,-38);c.beginPath();c.arc(hx,hy+44,15,1.15*PI,1.85*PI);c.lineWidth=5;c.strokeStyle='#8a1c2b';c.stroke();const k=(t*.7)%1;c.globalAlpha=1-k;c.fillStyle='#4dabf7';c.beginPath();const dx=hx-27,dy=hy+14+k*40;c.moveTo(dx,dy-10);c.quadraticCurveTo(dx+8,dy+2,dx,dy+6);c.quadraticCurveTo(dx-8,dy+2,dx,dy-10);c.fill();c.globalAlpha=1}
+  else if(md==='angry'){brow(-1,-36,-24);brow(1,-36,-24);c.beginPath();c.moveTo(hx-14,hy+34);c.lineTo(hx+14,hy+34);c.lineWidth=6;c.strokeStyle='#8a1c2b';c.stroke();circ(hx-40,hy+22,13,'#e03131',.45);circ(hx+40,hy+22,13,'#e03131',.45)}
+  else if(md==='scared'){brow(-1,-40,-36);brow(1,-40,-36);c.beginPath();c.ellipse(hx+2*Math.sin(t*30),hy+34,8,11,0,0,2*PI);c.fillStyle='#8a1c2b';c.fill()}
+  else if(md==='surprised'){c.beginPath();c.arc(hx-24,hy-30,12,1.1*PI,1.9*PI);c.moveTo(hx+36,hy-30);c.arc(hx+24,hy-30,12,1.1*PI,1.9*PI);c.lineWidth=5;c.strokeStyle='#3b2a1a';c.stroke();c.beginPath();c.ellipse(hx,hy+34,12,16,0,0,2*PI);c.fillStyle='#8a1c2b';c.fill()}
+  else if(md==='calm'){c.beginPath();c.arc(hx,hy+22,14,.2*PI,.8*PI);c.lineWidth=5;c.strokeStyle='#8a1c2b';c.stroke()}}
+
+/* small icon canvases */
+function drawTo(ctx2,fn){const k=c;c=ctx2;try{fn()}finally{c=k}}
+function iconCanvas(el,fn,size){const d=Math.min(window.devicePixelRatio||1,2);el.width=size*d;el.height=size*d;const x=el.getContext('2d');x.scale(d*size/200,d*size/200);const W0=W,H0=H;drawTo(x,()=>{W=200;H=200;fn()});W=W0;H=H0}
+function emojiCanvas(el,e,size){iconCanvas(el,()=>emoji(e,100,100,150),size)}
+
+/* music engine */
+const MUS={ctx:null,on:true,mood:null,step:0,next:0,duck:1};try{MUS.on=localStorage.getItem('yas_music')!=='off'}catch(e){}
+const MOODS={
+ home:{bpm:104,base:62,wave:'triangle',drums:1,prog:[[0,4,7],[5,9,12],[7,11,14],[0,4,7]],mel:[7,null,9,12,9,null,7,4, 9,null,12,14,12,null,9,null, 11,null,14,16,14,null,11,7, 12,null,7,null,4,null,null,null]},
+ learn:{bpm:76,base:74,wave:'sine',box:1,pad:1,prog:[[0,4,7],[9,12,16],[5,9,12],[7,11,14]],mel:[0,null,4,null,7,null,12,null, 9,null,7,null,4,null,null,null, 5,null,9,null,12,null,9,null, 7,null,11,null,14,null,null,null]},
+ play:{bpm:124,base:60,wave:'square',drums:1,snare:1,prog:[[0,4,7],[9,12,16],[5,9,12],[7,11,14]],mel:[12,9,7,9,12,null,16,null, 12,9,4,9,12,null,null,null, 9,5,0,5,9,null,12,null, 11,null,14,null,12,null,null,null]},
+ party:{bpm:138,base:60,wave:'square',drums:1,snare:1,prog:[[0,4,7],[5,9,12],[7,11,14],[0,4,7]],mel:[12,12,16,12,19,null,16,null, 17,17,21,17,24,null,21,null, 19,19,23,19,26,null,23,null, 24,null,19,null,24,null,null,null]}};
+const midi=n=>440*Math.pow(2,(n-69)/12);
+function audioInit(){if(MUS.ctx)return;const A=window.AudioContext||window.webkitAudioContext;if(!A)return;try{const ac=new A();MUS.ctx=ac;MUS.master=ac.createGain();MUS.master.connect(ac.destination);
+  MUS.music=ac.createGain();MUS.music.gain.value=MUS.on?.5:0;MUS.music.connect(MUS.master);MUS.sfx=ac.createGain();MUS.sfx.gain.value=.9;MUS.sfx.connect(MUS.master);
+  const b=ac.createBuffer(1,ac.sampleRate*.3,ac.sampleRate),d=b.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1;MUS.noise=b;setInterval(sched,40);MUS.next=ac.currentTime+.1}catch(e){}}
+function tone(f,t,d,type,g,dest){const ac=MUS.ctx,o=ac.createOscillator(),v=ac.createGain();o.type=type;o.frequency.value=f;let out=o;if(type==='square'){const fl=ac.createBiquadFilter();fl.type='lowpass';fl.frequency.value=1500;o.connect(fl);out=fl}
+  v.gain.setValueAtTime(0,t);v.gain.linearRampToValueAtTime(g,t+.012);v.gain.exponentialRampToValueAtTime(.0008,t+d);out.connect(v).connect(dest||MUS.music);o.start(t);o.stop(t+d+.05)}
+function noiseHit(t,g,ft,f,d){const ac=MUS.ctx,s=ac.createBufferSource(),fl=ac.createBiquadFilter(),v=ac.createGain();s.buffer=MUS.noise;fl.type=ft;fl.frequency.value=f;v.gain.setValueAtTime(g,t);v.gain.exponentialRampToValueAtTime(.0008,t+d);s.connect(fl).connect(v).connect(MUS.music);s.start(t);s.stop(t+d+.02)}
+function kick(t){const ac=MUS.ctx,o=ac.createOscillator(),v=ac.createGain();o.frequency.setValueAtTime(140,t);o.frequency.exponentialRampToValueAtTime(45,t+.12);v.gain.setValueAtTime(.3,t);v.gain.exponentialRampToValueAtTime(.001,t+.2);o.connect(v).connect(MUS.music);o.start(t);o.stop(t+.22)}
+function playStep(i,t,sd){const M=MOODS[MUS.mood],ch=M.prog[Math.floor(i/8)],n=M.mel[i];if(n!=null){tone(midi(M.base+n),t,sd*(M.box?3:1.7),M.wave,M.wave==='square'?.045:.085);if(M.box)tone(midi(M.base+n+12),t,sd*2,'sine',.022)}
+  if(i%4===0)tone(midi(M.base-24+ch[0]),t,sd*3.6,'triangle',.12);if(M.pad&&i%8===0)ch.forEach(x=>tone(midi(M.base-12+x),t,sd*7.8,'sine',.02));
+  if(M.drums){if(i%4===0)kick(t);if(i%2===1)noiseHit(t,.03,'highpass',7000,.04);if(M.snare&&i%8===4)noiseHit(t,.08,'bandpass',1800,.12)}}
+function sched(){const ac=MUS.ctx;if(!ac||!MUS.mood)return;const M=MOODS[MUS.mood],sd=60/M.bpm/2;if(MUS.next<ac.currentTime)MUS.next=ac.currentTime+.05;while(MUS.next<ac.currentTime+.18){playStep(MUS.step,MUS.next,sd);MUS.next+=sd;MUS.step=(MUS.step+1)%32}}
+function setMood(m){if(m===MUS.mood)return;MUS.mood=m;MUS.step=0;if(MUS.ctx)MUS.next=MUS.ctx.currentTime+.08}
+function musicLevel(){if(MUS.music&&MUS.ctx)MUS.music.gain.setTargetAtTime(MUS.on?.5*MUS.duck:0,MUS.ctx.currentTime,.15)}
+['pointerdown','keydown'].forEach(ev=>document.addEventListener(ev,()=>{audioInit();if(MUS.ctx&&MUS.ctx.state==='suspended')MUS.ctx.resume()},{passive:true}));
+function sfx(ok){if(!MUS.ctx)return;const t0=MUS.ctx.currentTime;(ok?[660,880,1320]:[220,180]).forEach((f,i)=>tone(f,t0+i*.1,.3,ok?'sine':'triangle',.2,MUS.sfx))}
+function fanfare(){if(!MUS.ctx)return;const t0=MUS.ctx.currentTime;[60,64,67,72,67,72,76].forEach((n,i)=>tone(midi(n+12),t0+i*.11,i===6?.9:.25,'triangle',.18,MUS.sfx))}
+function speak(text,quiet){if(!('speechSynthesis' in window)){if(!quiet)toast(T('noTTS'));return}const vs=speechSynthesis.getVoices().filter(v=>v.lang&&v.lang.toLowerCase().startsWith(lang));if(!vs.length){if(!quiet)toast(T('noTTS'));return}
+  speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.voice=vs[0];u.lang=u.voice.lang;u.rate=.88;MUS.duck=.25;musicLevel();u.onend=u.onerror=()=>{MUS.duck=1;musicLevel()};speechSynthesis.speak(u)}
+let toastT;function toast(m){const t=$('toast');t.textContent=m;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>t.hidden=true,2600)}
+const T0=performance.now();const now=()=>(performance.now()-T0)/1000;
+
+/* stars */
+let stars=0;try{stars=+(localStorage.getItem('yas_stars')||0)}catch(e){}
+function addStar(n=1){stars+=n;$('starN').textContent=stars;try{localStorage.setItem('yas_stars',stars)}catch(e){}}
+let fx={until:0,start:0},kidFx={jump:0};
+function praise(){const p=T('praise');return p[Math.floor(Math.random()*p.length)]}
+function celebrate(){sfx(true);fx={start:now(),until:now()+1.6};kidFx.jump=now()}
+
+/* ---------- island, zones, apps registry ---------- */
+const APPS={
+ move:{e:'🏃',col:'#f76707',n:L4('تحرّك مع ياسين','Bouge avec Yassine','Move with Yassine','Muévete con Yassine'),ready:1},
+ family:{e:'🎲',col:'#e64980',n:L4('ألعاب العائلة','Jeux en famille','Family games','Juegos en familia')},
+ music:{e:'🎹',col:'#7048e8',n:L4('استوديو الموسيقى','Studio de musique','Music studio','Estudio de música')},
+ stories:{e:'📖',col:'#7a2fa0',n:L4('قصص تفاعلية','Histoires interactives','Interactive stories','Cuentos interactivos')},
+ firstword:{e:'👶',col:'#f783ac',n:L4('الكلمة الأولى','Premiers mots','First words','Primeras palabras')},
+ events:{e:'🎉',col:'#fd7e14',n:L4('عيد ومناسبة','Fêtes et occasions','Holidays','Fiestas')},
+ morocco:{e:'🗺️',col:'#c92a2a',n:L4('نكتشف المغرب','Découvre le Maroc','Discover Morocco','Descubre Marruecos')},
+ routine:{e:'⏰',col:'#1c7ed6',n:L4('روتيني اليومي','Ma routine','My daily routine','Mi rutina diaria'),ready:1},
+ safe:{e:'🚦',col:'#e03131',n:L4('أنا آمن','Je reste en sécurité','I stay safe','Estoy seguro'),ready:1},
+ feel:{e:'😊',col:'#e64980',n:L4('مشاعري','Mes émotions','My feelings','Mis emociones'),ready:1},
+ prayer:{e:'🕌',col:'#0ca678',n:L4('الصلاة والوضوء','La prière et les ablutions','Prayer and wudu','La oración y el wudu')},
+ lab:{e:'🔬',col:'#1098ad',n:L4('مختبر نجمة','Le labo de Najma','Najma’s lab','El laboratorio de Najma')},
+ robot:{e:'🤖',col:'#495057',n:L4('علّم الروبو','Programme le robot','Code the robot','Programa el robot'),ready:1},
+ math:{e:'🧮',col:'#f59f00',n:L4('مدينة الحساب','La ville des calculs','Math town','La ciudad de los números'),ready:1},
+ langs:{e:'🗣️',col:'#3b5bdb',n:L4('نتكلّم لغات','Je parle des langues','I speak languages','Hablo idiomas')},
+ garden:{e:'🌻',col:'#2f9e44',n:L4('الجنينة','Le jardin','The garden','El jardín')},
+ pet:{e:'🐱',col:'#f08c00',n:L4('حيواني الأليف','Mon animal','My pet','Mi mascota')},
+ puzzle:{e:'🧩',col:'#5f3dc4',n:L4('ركّب الصورة','Puzzle','Puzzle','Rompecabezas')},
+ film:{e:'🎬',col:'#212529',n:L4('استوديو أفلامي','Mon studio de films','My film studio','Mi estudio de cine')}};
+const ZONES=[
+ {id:'village',e:'🏡',col:'#1c7ed6',x:0,y:-.05,n:L4('قرية ياسين','Le village de Yassine','Yassine’s Village','El pueblo de Yassine'),apps:['routine','safe','feel','prayer']},
+ {id:'beach',e:'🏖️',col:'#f59f00',x:-.62,y:.52,n:L4('شاطئ المرح','La plage des jeux','Fun Beach','Playa divertida'),apps:['move','family','music']},
+ {id:'forest',e:'🌳',col:'#2f9e44',x:-.6,y:-.48,n:L4('غابة الحكايات','La forêt des histoires','Story Forest','Bosque de cuentos'),apps:['stories','firstword','events','morocco']},
+ {id:'mountain',e:'⛰️',col:'#7048e8',x:.6,y:-.5,n:L4('جبل الاكتشاف','La montagne des découvertes','Discovery Mountain','Montaña del descubrimiento'),apps:['lab','robot','math','langs']},
+ {id:'valley',e:'🌻',col:'#e8590c',x:.62,y:.5,n:L4('وادي الاهتمام','La vallée des soins','Caring Valley','Valle del cuidado'),apps:['garden','pet','puzzle','film']}];
+let curZone=null;
+function islandGeom(){const cx=W/2,cy=540,rx=Math.min(W*.46,760),ry=330;return{cx,cy,rx,ry}}
+function zonePos(z){const g=islandGeom();const dir=lang==='ar'?-1:1;return{x:g.cx+z.x*g.rx*.78*dir,y:g.cy+z.y*g.ry*.78}}
+function drawIsland(t){vgrad(0,H,[[0,'#74c0fc'],[.35,'#3bc9db'],[1,'#1098ad']]);sun(W-140,110,55,t);cloud((t*18)%(W+400)-200,90,.7);cloud((t*12+800)%(W+400)-200,150,.5);
+  for(let r=0;r<6;r++){c.beginPath();const y=230+r*130;for(let x=0;x<=W+20;x+=20)c.lineTo(x,y+8*Math.sin(x/70+t*1.5+r));c.lineWidth=4;c.strokeStyle='rgba(255,255,255,.25)';c.stroke()}
+  const g=islandGeom();const blob=(k,col)=>{c.beginPath();for(let a=0;a<=2*PI+.01;a+=.08){const wob=1+.06*Math.sin(a*5+1)+.04*Math.sin(a*3);c.lineTo(g.cx+Math.cos(a)*g.rx*k*wob,g.cy+Math.sin(a)*g.ry*k*wob)}c.closePath();c.fillStyle=col;c.fill()};
+  blob(1.08,'rgba(255,255,255,.35)');blob(1.02,'#ffe8a3');blob(.9,'#8ce99a');blob(.8,'#69db7c');
+  // landmarks
+  const lp=id=>zonePos(ZONES.find(z=>z.id===id));
+  let p=lp('beach');palm(p.x-60,p.y+30,.55,t);palm(p.x+70,p.y+40,.45,t);emoji('⛱️',p.x,p.y+10,70);
+  p=lp('forest');tree(p.x-60,p.y+40,.45,'#2b8a3e','#40c057');tree(p.x+50,p.y+50,.5,'#37b24d');tree(p.x,p.y+20,.38,'#2f9e44','#69db7c');
+  p=lp('mountain');c.beginPath();c.moveTo(p.x-130,p.y+60);c.lineTo(p.x-20,p.y-110);c.lineTo(p.x+40,p.y-30);c.lineTo(p.x+80,p.y-80);c.lineTo(p.x+150,p.y+60);c.closePath();c.fillStyle='#9775fa';c.fill();
+  c.beginPath();c.moveTo(p.x-20,p.y-110);c.lineTo(p.x-50,p.y-60);c.lineTo(p.x+5,p.y-70);c.closePath();c.fillStyle='#fff';c.fill();emoji('🔭',p.x+90,p.y+20,46);
+  p=lp('valley');for(let i=0;i<9;i++)emoji(['🌻','🌷','🌼'][i%3],p.x-110+i*28,p.y+40+(i%2)*14,34);emoji('🛖',p.x+20,p.y-10,70);
+  p=lp('village');[[-80,10,'#ff8787'],[0,-20,'#74c0fc'],[80,10,'#ffd43b']].forEach(([dx,dy,col])=>{rr(p.x+dx-40,p.y+dy-10,80,70,8);c.fillStyle='#fff';c.fill();c.beginPath();c.moveTo(p.x+dx-50,p.y+dy-6);c.lineTo(p.x+dx,p.y+dy-56);c.lineTo(p.x+dx+50,p.y+dy-6);c.closePath();c.fillStyle=col;c.fill();rr(p.x+dx-12,p.y+dy+24,24,36,6);c.fillStyle='#a0703c';c.fill()});
+  // pins + names
+  ZONES.forEach(z=>{const q=zonePos(z);const k=pop(t,.2+ZONES.indexOf(z)*.12,.7);if(k<.02)return;c.save();c.translate(q.x,q.y-120);c.scale(k,k);
+    rr(-110,-34,220,68,34);c.fillStyle='rgba(255,255,255,.95)';c.fill();c.restore();label(tx(z.n),q.x,q.y-120,Math.min(36,W*.035)*k,z.col,'#fff')});
+  drawDecor(t);const v=lp('village');yassine(v.x-Math.min(150,W*.12),g.cy+g.ry*.62,Math.min(.7,W/1500),t,{});najma(v.x+Math.min(140,W*.12),g.cy+g.ry*.35,Math.min(.6,W/1700),t)}
+function zoneAt(px,py){let best=null,bd=1e9;ZONES.forEach(z=>{const q=zonePos(z);const d=Math.hypot(px-q.x,py-(q.y-30));if(d<bd){bd=d;best=z}});return bd<Math.min(260,W*.22)?best:null}
+cv.addEventListener('click',e=>{if(mode!=='home')return;const r=cv.getBoundingClientRect();const x=(e.clientX-r.left)/r.width*W,y=(e.clientY-r.top)/r.height*H;const z=zoneAt(x,y);if(z){curZone=z;sfx(true);go('zone')}});
+function buildHome(){const g=$('homeGrid');g.innerHTML='';ZONES.forEach(z=>{const b=document.createElement('button');b.className='tile';b.style.background=z.col;const cc=document.createElement('canvas');emojiCanvas(cc,z.e,56);const sm=document.createElement('small');sm.textContent=T('apps',z.apps.length);b.append(cc,tx(z.n),sm);b.onclick=()=>{curZone=z;go('zone')};g.appendChild(b)})}
+function buildZone(){const g=$('zoneGrid');g.innerHTML='';curZone.apps.forEach(id=>{const a=APPS[id];const b=document.createElement('button');b.className='tile'+(a.ready?'':' soon');b.style.background=a.col;const cc=document.createElement('canvas');emojiCanvas(cc,a.e,56);const sm=document.createElement('small');sm.textContent=a.ready?'':'🚧 '+T('soon');b.append(cc,tx(a.n),sm);
+  b.onclick=()=>{if(a.ready)go(id);else{toast(T('soonMsg'));sfx(false)}};g.appendChild(b)})}
+function zoneBg(z,t){if(z.id==='beach'){vgrad(0,600,[[0,'#4cc9f0'],[1,'#bdefff']]);sun(W*.2,200,70,t);vgrad(560,780,[[0,'#1c7ed6'],[1,'#4dabf7']]);hill(770,20,1.3,.5,'#ffe066');hill(840,15,2,1.2,'#fcc419');palm(W*.85,820,.9,t)}
+  else if(z.id==='forest'){vgrad(0,H,[[0,'#b2f2bb'],[1,'#2b8a3e']]);for(let i=0;i<7;i++)tree(i*W/6,760+(i%2)*40,.8,i%2?'#2f9e44':'#37b24d','#69db7c');hill(820,20,1.5,0,'#2f9e44')}
+  else if(z.id==='mountain'){vgrad(0,H,[[0,'#5f3dc4'],[.6,'#b197fc'],[1,'#e5dbff']]);for(let i=0;i<40;i++){const a=P[i];circ(a[0]*W,a[1]*400,2+a[2]*2,'#fff',.5+.5*Math.sin(t*2+i))}
+    c.beginPath();c.moveTo(0,800);c.lineTo(W*.25,380);c.lineTo(W*.45,640);c.lineTo(W*.7,330);c.lineTo(W,800);c.closePath();c.fillStyle='#7950f2';c.fill();hill(820,20,1.3,0,'#9775fa')}
+  else if(z.id==='valley'){vgrad(0,H,[[0,'#ffd8a8'],[.6,'#fff3bf'],[1,'#d3f9d8']]);sun(W*.8,200,60,t);hill(720,40,1,1,'#8ce99a');hill(800,30,1.7,2,'#51cf66');for(let i=0;i<Math.ceil(W/90);i++)emoji(['🌻','🌷','🌼'][i%3],40+i*90,880+(i%2)*30,46)}
+  else{vgrad(0,H,[[0,'#a5d8ff'],[1,'#fff4e6']]);cloud((t*20)%(W+400)-200,140,.8);c.fillStyle='#ced4da';c.fillRect(0,780,W,H-780);[[.12,'#ff8787'],[.32,'#74c0fc'],[.68,'#ffd43b'],[.88,'#b2f2bb']].forEach(([fx2,col])=>{const x=W*fx2;rr(x-90,560,180,220,10);c.fillStyle='#fff';c.fill();c.beginPath();c.moveTo(x-110,570);c.lineTo(x,450);c.lineTo(x+110,570);c.closePath();c.fillStyle=col;c.fill();rr(x-25,690,50,90,8);c.fillStyle='#a0703c';c.fill()})}}
+function drawZone(t){const z=curZone;zoneBg(z,t);label(tx(z.n),W/2,110,Math.min(96,W*.1),'#fff',darker(z.col));const ks=Math.min(1,W/700);yassine(W/2-Math.min(120,W*.1),930,ks,t,{});najma(W/2+Math.min(170,W*.15),560,Math.min(.8,W/1000),t)}
+
+/* ================= APPS ================= */
+let lastApp=null;
+function finish(score,n,custom){lastApp=mode;show('done');$('doneT').textContent=custom?T('doneGood'):(score>=n*.7?T('doneGood'):T('praise')[1]);$('doneS').textContent=custom||T('score',score,n);fx={start:now(),until:now()+4};fanfare()}
+function dots(el,n,i,res){el.innerHTML=Array.from({length:n},(_,k)=>`<i class="${k<i?(res&&res[k]===false?'miss':'done'):''} ${k===i?'now':''}"></i>`).join('')}
+function optBtn(html,bg,onclick){const b=document.createElement('button');b.className='ans';b.style.background=bg||'#e6fcf5';b.innerHTML=html;b.onclick=()=>onclick(b);return b}
+function shake(b){b.classList.remove('no');void b.offsetWidth;b.classList.add('no')}
+
+/* ---------- 1. FEELINGS ---------- */
+addUI({feelTabs:[['أتعرّف','كيف يشعر ياسين؟','تنفّس معي'],['Découvrir','Comment se sent Yassine ?','Respire avec moi'],['Discover','How does Yassine feel?','Breathe with me'],['Descubrir','¿Cómo se siente Yassine?','Respira conmigo']],
+ feelQ:['كيف يشعر ياسين؟','Comment se sent Yassine ?','How does Yassine feel?','¿Cómo se siente Yassine?'],breathStart:['ابدأ التنفّس','Commencer','Start breathing','Empezar'],
+ breathCue:[['استنشق ببطء…','احبس قليلًا…','ازفر ببطء…'],['Inspire doucement…','Retiens…','Souffle doucement…'],['Breathe in slowly…','Hold it…','Breathe out slowly…'],['Inspira despacio…','Aguanta…','Suelta el aire despacio…']],
+ breathDone:['أحسنت! أنت الآن أهدأ','Bravo ! Tu es plus calme','Well done! You’re calmer now','¡Muy bien! Ahora estás más tranquilo']});
+const FEELS=[
+ {md:'happy',e:'😊',n:L4('سعيد','Content','Happy','Feliz'),s:L4('أشعر بالسعادة عندما ألعب مع أصدقائي.','Je suis content quand je joue avec mes amis.','I feel happy when I play with my friends.','Me siento feliz cuando juego con mis amigos.'),tip:L4('أشارك فرحتي مع من أحب.','Je partage ma joie avec ceux que j’aime.','I share my joy with the people I love.','Comparto mi alegría con quienes quiero.')},
+ {md:'sad',e:'😢',n:L4('حزين','Triste','Sad','Triste'),s:L4('أشعر بالحزن عندما يضيع مني شيء أحبه.','Je suis triste quand je perds un objet que j’aime.','I feel sad when I lose something I love.','Me siento triste cuando pierdo algo que quiero.'),tip:L4('أتكلّم مع ماما أو بابا، وأطلب حضنًا.','J’en parle à maman ou papa et je demande un câlin.','I talk to mum or dad and ask for a hug.','Hablo con mamá o papá y pido un abrazo.')},
+ {md:'angry',e:'😠',n:L4('غاضب','En colère','Angry','Enfadado'),s:L4('أشعر بالغضب عندما يأخذ أحدٌ لعبتي.','Je suis en colère quand on prend mon jouet.','I feel angry when someone takes my toy.','Me enfado cuando alguien coge mi juguete.'),tip:L4('أتوقّف، وأتنفّس ببطء، ثم أقول ما أشعر به بالكلمات.','Je m’arrête, je respire lentement, puis je dis ce que je ressens.','I stop, breathe slowly, then say how I feel with words.','Me paro, respiro despacio y digo lo que siento con palabras.')},
+ {md:'scared',e:'😨',n:L4('خائف','J’ai peur','Scared','Con miedo'),s:L4('أشعر بالخوف في الظلام أو من صوت قوي.','J’ai peur dans le noir ou quand il y a un bruit fort.','I feel scared in the dark or when there is a loud noise.','Tengo miedo en la oscuridad o con un ruido fuerte.'),tip:L4('أقترب من شخص كبير أثق به.','Je vais près d’un adulte de confiance.','I go close to a grown-up I trust.','Me acerco a un adulto de confianza.')},
+ {md:'surprised',e:'😲',n:L4('متفاجئ','Surpris','Surprised','Sorprendido'),s:L4('أتفاجأ عندما أحصل على هدية.','Je suis surpris quand je reçois un cadeau.','I feel surprised when I get a present.','Me sorprendo cuando recibo un regalo.'),tip:L4('أقول: واو! وأشكر من فاجأني.','Je dis « waouh ! » et je remercie.','I say “wow!” and say thank you.','Digo «¡guau!» y doy las gracias.')},
+ {md:'calm',e:'😌',n:L4('هادئ','Calme','Calm','Tranquilo'),s:L4('أشعر بالهدوء عندما تُقرأ لي قصة قبل النوم.','Je suis calme quand on me lit une histoire le soir.','I feel calm when someone reads me a bedtime story.','Me siento tranquilo cuando me leen un cuento antes de dormir.'),tip:L4('أتنفّس ببطء وأستمتع بالهدوء.','Je respire doucement et je profite du calme.','I breathe slowly and enjoy the quiet.','Respiro despacio y disfruto de la calma.')}];
+let FL={tab:0,idx:0,q:null,br:null};
+function buildFeel(){const tabs=$('feelTabs');tabs.innerHTML='';T('feelTabs').forEach((nm,i)=>{const b=document.createElement('button');b.className='chip';b.textContent=nm;b.setAttribute('aria-pressed',String(FL.tab===i));b.onclick=()=>{FL.tab=i;FL.br=null;buildFeel()};tabs.appendChild(b)});
+  const p=$('feelPane');p.innerHTML='';
+  if(FL.tab===0){const g=document.createElement('div');g.className='answers six';FEELS.forEach((f,i)=>g.appendChild(optBtn(`<span class="big-e">${f.e}</span>${tx(f.n)}`,i===FL.idx?'#ffe3ec':'#f1f3f5',()=>{FL.idx=i;buildFeel();speak(tx(f.n)+'. '+tx(f.s)+' '+tx(f.tip),true)})));
+    const f=FEELS[FL.idx];const s=document.createElement('p');s.className='q';s.textContent=tx(f.s);const tp=document.createElement('p');tp.className='tdesc';tp.textContent='💡 '+tx(f.tip);p.append(g,s,tp)}
+  else if(FL.tab===1){if(!FL.q||FL.q.i>=6)FL.q={order:shuffle([0,1,2,3,4,5]),i:0,score:0,miss:false};const q=FL.q,ti=q.order[q.i];
+    const d=document.createElement('div');d.className='dots';dots(d,6,q.i);const h=document.createElement('p');h.className='q';h.textContent=T('feelQ');const g=document.createElement('div');g.className='answers';const msg=document.createElement('p');msg.className='msg';
+    shuffle([ti,...shuffle([0,1,2,3,4,5].filter(x=>x!==ti)).slice(0,3)]).forEach(j=>g.appendChild(optBtn(`<span class="big-e">${FEELS[j].e}</span>${tx(FEELS[j].n)}`,'#f1f3f5',b=>{
+      if(j===ti){b.classList.add('ok');msg.textContent=praise();msg.className='msg good';celebrate();if(!q.miss){q.score++;addStar()}q.miss=false;q.i++;setTimeout(()=>{if(mode!=='feel')return;if(q.i>=6)finish(q.score,6);else buildFeel()},1300)}
+      else{q.miss=true;shake(b);msg.textContent=T('wrong');msg.className='msg bad';sfx(false)}})));p.append(d,h,g,msg)}
+  else{const cue=document.createElement('p');cue.className='big';cue.id='brCue';cue.textContent='🎈';const cnt=document.createElement('p');cnt.className='tdesc';cnt.id='brCnt';const b=document.createElement('button');b.className='candy';b.textContent=T('breathStart');
+    b.onclick=()=>{FL.br={t0:now(),last:-1};b.hidden=true;MUS.duck=.3;musicLevel()};p.append(cue,cnt,b)}}
+function breathTick(t){const br=FL.br;if(!br)return null;const e=t-br.t0,cyc=Math.floor(e/10),ph=e%10;
+  if(cyc>=5){FL.br=null;MUS.duck=1;musicLevel();addStar();sfx(true);$('brCue').textContent=T('breathDone');$('brCnt').textContent='';return null}
+  const phase=ph<4?0:ph<6?1:2;if(phase!==br.last||cyc!==br.cyc){br.last=phase;br.cyc=cyc;$('brCue').textContent=T('breathCue')[phase];$('brCnt').textContent=`${cyc+1} / 5`}
+  return{scale:phase===0?.45+.55*ease(ph/4):phase===1?1:1-.55*ease((ph-6)/4)}}
+function drawFeel(t){vgrad(0,H,[[0,'#ffdeeb'],[.6,'#f3d9fa'],[1,'#e5dbff']]);FEELS.forEach((f,i)=>emoji(f.e,(i+.5)*W/6,90+10*Math.sin(t*1.5+i),Math.min(60,W*.06)));const ks=Math.min(1.25,W/600);
+  if(FL.tab===0){const f=FEELS[FL.idx];yassine(W/2,930,ks,t,{mood:f.md,wave:f.md==='happy'?1:.05});label(tx(f.n),W/2,240,Math.min(110,W*.13),'#fff','#e64980')}
+  else if(FL.tab===1&&FL.q){const ti=FL.q.order[Math.min(FL.q.i,5)];yassine(W/2,930,ks,t,{mood:FEELS[ti].md,wave:.05,jump:kidFx.jump&&t-kidFx.jump<1.2?Math.sin((t-kidFx.jump)/1.2*PI)*80:0});najma(W/2+Math.min(270,W*.28),300,.7,t)}
+  else{const b=breathTick(t);const sc=b?b.scale:.45+.05*Math.sin(t*2);const r=Math.min(220,W*.25)*sc;c.beginPath();c.moveTo(W/2,330+r);c.quadraticCurveTo(W/2+30,520,W/2,600);c.lineWidth=4;c.strokeStyle='#868e96';c.stroke();balloon(W/2,330,r,'#ff6b9a');
+    yassine(W/2,930,Math.min(1,W/700),t,{mood:'calm',wave:.05})}}
+
+/* ---------- 2. MOVE ---------- */
+addUI({mvSub:['6 تمارين في دقيقتين','6 exercices en 2 minutes','6 exercises in 2 minutes','6 ejercicios en 2 minutos'],mvReady:['استعدّ!','Prêt ?','Get ready!','¡Prepárate!'],
+ moveDone:['أحسنت! تحرّكت جيدًا اليوم','Bravo ! Tu as bien bougé aujourd’hui','Well done! You moved a lot today','¡Muy bien! Hoy te has movido mucho'],sec:[n=>`${n} ث`,n=>`${n} s`,n=>`${n} s`,n=>`${n} s`]});
+const MOVES=[{id:'jump',e:'🐰',n:L4('اقفز مثل الأرنب','Saute comme un lapin','Jump like a bunny','Salta como un conejo')},{id:'oneLeg',e:'🦩',n:L4('قف على رجل واحدة مثل طائر النحام','Tiens sur un pied comme le flamant rose','Stand on one leg like a flamingo','Sostente en un pie como el flamenco')},
+ {id:'armsUp',e:'🌳',n:L4('تمدّد نحو السماء مثل الشجرة','Étire-toi vers le ciel comme un arbre','Stretch up to the sky like a tree','Estírate hacia el cielo como un árbol')},{id:'run',e:'🏃',n:L4('اركض في مكانك','Cours sur place','Run on the spot','Corre sin moverte del sitio')},
+ {id:'toe',e:'🦶',n:L4('المس أصابع قدميك','Touche tes orteils','Touch your toes','Tócate los pies')},{id:'spin',e:'✈️',n:L4('افتح ذراعيك ودُر مثل الطائرة','Ouvre les bras et tourne comme un avion','Open your arms and turn like a plane','Abre los brazos y gira como un avión')},
+ {id:'clap',e:'👏',n:L4('صفّق فوق رأسك','Tape dans tes mains au-dessus de ta tête','Clap above your head','Aplaude sobre tu cabeza')},{id:'squat',e:'🐸',n:L4('اجلس وقم مثل الضفدع','Accroupis-toi et relève-toi comme une grenouille','Squat and stand like a frog','Agáchate y levántate como una rana')}];
+const MV_DUR=20,MV_READY=3;let MV={on:false,list:[],i:0,t0:0,lastTxt:''};
+function buildMove(){MV={on:false,list:shuffle(MOVES).slice(0,6),i:0,t0:0,lastTxt:''};$('mvName').textContent=T('mvSub');$('mvTime').textContent='';$('mvMeter').style.width='0%';
+  const l=$('mvList');l.innerHTML='';MV.list.forEach(m=>{const s=document.createElement('span');s.className='chip';s.textContent=m.e+' '+tx(m.n);l.appendChild(s)});l.hidden=false;$('mvStart').hidden=false;$('mvSkip').hidden=true}
+$('mvStart').onclick=()=>{MV.on=true;MV.i=0;MV.t0=now();$('mvList').hidden=true;$('mvStart').hidden=true;$('mvSkip').hidden=false;setMood('party')};
+$('mvSkip').onclick=()=>{if(!MV.on)return;MV.i++;MV.t0=now();if(MV.i>=MV.list.length)moveEnd()};
+function moveEnd(){MV.on=false;setMood('play');addStar(2);finish(0,0,T('moveDone'))}
+function moveTick(t){if(!MV.on)return null;const e=t-MV.t0;if(e>=MV_READY+MV_DUR){MV.i++;MV.t0=t;if(MV.i>=MV.list.length){moveEnd();return null}sfx(true)}
+  const m=MV.list[MV.i],ee=t-MV.t0,ready=ee<MV_READY;const txt=(ready?T('mvReady')+' ':'')+m.e+' '+tx(m.n);if(txt!==MV.lastTxt){MV.lastTxt=txt;$('mvName').textContent=txt;if(!ready)speak(tx(m.n),true)}
+  const left=ready?Math.ceil(MV_READY-ee):Math.ceil(MV_READY+MV_DUR-ee);$('mvTime').textContent=ready?String(left):T('sec',left);$('mvMeter').style.width=ready?'0%':Math.round((ee-MV_READY)/MV_DUR*100)+'%';return{m,ready,ee:ee-MV_READY}}
+function drawMove(t){zoneBg(ZONES[1],t);const st=moveTick(t);const ks=Math.min(1.15,W/650);let o={};
+  if(st&&!st.ready){const id=st.m.id,tt=st.ee;
+    if(id==='jump')Object.assign(o,{jump:130*Math.abs(Math.sin(tt*PI*1.4)),armA:-PI/2+.3,armB:-PI/2-.3});
+    else if(id==='oneLeg')Object.assign(o,{legUp:1,armA:-.1+.08*Math.sin(tt*3),armB:PI+.1-.08*Math.sin(tt*3)});
+    else if(id==='armsUp')Object.assign(o,{armA:-PI/2+.18+.1*Math.sin(tt*2),armB:-PI/2-.18-.1*Math.sin(tt*2)});
+    else if(id==='run')Object.assign(o,{armA:PI/2-.7*Math.sin(tt*12),armB:PI/2+.7*Math.sin(tt*12),jump:18*Math.abs(Math.sin(tt*12)),legT:tt*6});
+    else if(id==='toe')Object.assign(o,{bend:.45*Math.abs(Math.sin(tt*1.6)),armA:PI/2-.2,armB:PI/2+.2});
+    else if(id==='spin')Object.assign(o,{flipX:Math.cos(tt*3),armA:0,armB:PI});
+    else if(id==='clap'){const k=Math.abs(Math.sin(tt*7));o.armA=-PI/2-.15-.35*k;o.armB=-PI/2+.15+.35*k}
+    else if(id==='squat')Object.assign(o,{squat:Math.abs(Math.sin(tt*1.8)),armA:-.05,armB:PI+.05});
+    emoji(st.m.e,W-Math.min(160,W*.15),170,Math.min(140,W*.15))}
+  else if(st&&st.ready)label(String(Math.ceil(MV_READY-(t-MV.t0))),W/2,300,220,'#ffd43b','#f76707');
+  yassine(W/2,930,ks,t,o);if(!st)najma(W/2+Math.min(260,W*.25),380,.7,t)}
+
+/* ---------- 3. ROBOT (coding) ---------- */
+addUI({rbHelp:['أضف الأسهم ليصل الروبو إلى نجمة، ثم اضغط ▶','Ajoute des flèches pour amener le robot jusqu’à Najma, puis touche ▶','Add arrows to bring the robot to Najma, then tap ▶','Añade flechas para llevar el robot hasta Najma y toca ▶'],
+ rbLevel:[n=>`المستوى ${n} / 8`,n=>`Niveau ${n} / 8`,n=>`Level ${n} / 8`,n=>`Nivel ${n} / 8`],rbCrash:['اصطدم الروبو! غيّر الأسهم','Le robot s’est cogné ! Change les flèches','The robot bumped into something! Change the arrows','¡El robot chocó! Cambia las flechas'],
+ rbShort:['لم يصل الروبو إلى نجمة بعد، أضف أسهمًا','Le robot n’est pas encore arrivé, ajoute des flèches','The robot hasn’t reached Najma yet, add more arrows','El robot aún no ha llegado, añade flechas'],rbWin:['وصل الروبو إلى نجمة! 🌟','Le robot a retrouvé Najma ! 🌟','The robot reached Najma! 🌟','¡El robot llegó hasta Najma! 🌟'],
+ rbNext:['المستوى التالي','Niveau suivant','Next level','Siguiente nivel'],rbAll:['أنهيت كل المستويات! أنت مبرمج صغير','Tous les niveaux réussis ! Tu es un petit programmeur','All levels done! You’re a little coder','¡Todos los niveles! Eres un pequeño programador'],rbClear:['مسح','Effacer','Clear','Borrar']});
+const RB_LEVELS=[{s:[0,2],g:[3,2],r:[]},{s:[0,4],g:[0,1],r:[]},{s:[0,4],g:[3,1],r:[]},{s:[0,2],g:[4,2],r:[[2,2]]},{s:[0,2],g:[2,2],r:[[1,1],[1,2],[1,3]]},{s:[0,0],g:[4,0],r:[[2,0],[2,1],[2,2],[2,3]]},{s:[0,0],g:[4,4],r:[[1,0],[1,1],[1,2],[3,2],[3,3],[3,4]]},{s:[0,4],g:[0,0],r:[[0,2],[1,2],[2,2],[3,2]]}];
+const DIRS={U:[0,-1,'⬆️'],D:[0,1,'⬇️'],L:[-1,0,'⬅️'],R:[1,0,'➡️']};let RB={lv:0,prog:[],run:null,done:false};try{RB.lv=Math.min(7,+(localStorage.getItem('yas_rb')||0))}catch(e){}
+function buildRobot(){RB.prog=[];RB.run=null;RB.done=false;$('rbLevel').textContent=T('rbLevel',RB.lv+1);$('rbMsg').textContent=T('rbHelp');$('rbMsg').className='msg';$('rbNext').hidden=true;$('rbClear').textContent=T('rbClear');paintProg()}
+function paintProg(){const p=$('rbProg');p.innerHTML='';RB.prog.forEach((d,i)=>{const b=document.createElement('button');b.className='pchip'+(RB.run&&RB.run.i===i?' on':'');b.textContent=DIRS[d][2];b.onclick=()=>{if(RB.run)return;RB.prog.splice(i,1);paintProg()};p.appendChild(b)});
+  for(let i=RB.prog.length;i<14;i++){const s=document.createElement('span');s.className='pslot';p.appendChild(s)}}
+document.querySelectorAll('#rbBtns button').forEach(b=>b.onclick=()=>{if(RB.run||RB.done||RB.prog.length>=14)return;RB.prog.push(b.dataset.d);sfx(true);paintProg()});
+$('rbClear').onclick=()=>{if(RB.run)return;RB.prog=[];RB.done=false;$('rbMsg').textContent=T('rbHelp');$('rbMsg').className='msg';paintProg()};
+$('rbPlay').onclick=()=>{if(RB.run||!RB.prog.length||RB.done)return;const L=RB_LEVELS[RB.lv];RB.run={i:0,t0:now(),pos:L.s.slice(),from:L.s.slice(),fail:null}};
+$('rbNext').onclick=()=>{if(RB.lv<7){RB.lv++;try{localStorage.setItem('yas_rb',RB.lv)}catch(e){}buildRobot()}else{RB.lv=0;try{localStorage.setItem('yas_rb',0)}catch(e){}finish(0,0,T('rbAll'))}};
+function robotTick(t){const r=RB.run;if(!r)return;const L=RB_LEVELS[RB.lv];if(t-r.t0<.5)return;r.t0=t;
+  if(r.fail){RB.run=null;paintProg();return}
+  if(r.i>=RB.prog.length){RB.run=null;paintProg();if(r.pos[0]===L.g[0]&&r.pos[1]===L.g[1]){RB.done=true;$('rbMsg').textContent=T('rbWin');$('rbMsg').className='msg good';celebrate();addStar(2);$('rbNext').hidden=false}else{$('rbMsg').textContent=T('rbShort');$('rbMsg').className='msg bad';sfx(false)}return}
+  const d=DIRS[RB.prog[r.i]];const nx=r.pos[0]+d[0],ny=r.pos[1]+d[1];r.from=r.pos.slice();
+  if(nx<0||ny<0||nx>4||ny>4||L.r.some(q=>q[0]===nx&&q[1]===ny)){r.fail=true;r.shake=t;$('rbMsg').textContent=T('rbCrash');$('rbMsg').className='msg bad';sfx(false)}else{r.pos=[nx,ny];tone&&MUS.ctx&&tone(520+r.i*30,MUS.ctx.currentTime,.12,'square',.05,MUS.sfx)}
+  r.i++;paintProg()}
+function drawRobot(t){zoneBg(ZONES[3],t);robotTick(t);const L=RB_LEVELS[RB.lv];const cs=Math.min(140,(W-120)/5,150);const ox=W/2-2.5*cs,oy=470-2.5*cs;
+  rr(ox-16,oy-16,cs*5+32,cs*5+32,24);c.fillStyle='rgba(255,255,255,.9)';c.fill();
+  for(let y=0;y<5;y++)for(let x=0;x<5;x++){rr(ox+x*cs+4,oy+y*cs+4,cs-8,cs-8,14);c.fillStyle=(x+y)%2?'#e7f5ff':'#d0ebff';c.fill()}
+  L.r.forEach(([x,y])=>{const cx=ox+x*cs+cs/2,cy=oy+y*cs+cs/2;circ(cx-cs*.12,cy+cs*.08,cs*.26,'#868e96');circ(cx+cs*.14,cy+cs*.04,cs*.22,'#adb5bd');circ(cx,cy-cs*.1,cs*.2,'#9ca3af')});
+  najma(ox+L.g[0]*cs+cs/2,oy+L.g[1]*cs+cs/2,cs/260,t);
+  let px=L.s[0],py=L.s[1];const r=RB.run;if(r){const k=ease((t-r.t0)/.4);px=r.from[0]+(r.pos[0]-r.from[0])*k;py=r.from[1]+(r.pos[1]-r.from[1])*k}else if(RB.done){px=L.g[0];py=L.g[1]}
+  let rx=ox+px*cs+cs/2,ry=oy+py*cs+cs/2;if(r&&r.fail)rx+=Math.sin(t*60)*6;const s=cs/150;
+  c.save();c.translate(rx,ry+4*Math.sin(t*6));c.scale(s,s);c.beginPath();c.moveTo(0,-62);c.lineTo(0,-82);c.lineWidth=5;c.strokeStyle='#495057';c.stroke();circ(0,-86,9,Math.sin(t*6)>0?'#ff6b6b':'#ffd43b');
+  rr(-48,-62,96,76,20);c.fillStyle='#20c997';c.fill();rr(-34,-48,68,40,12);c.fillStyle='#e6fcf5';c.fill();circ(-15,-28,8,'#0b3d4a');circ(15,-28,8,'#0b3d4a');rr(-38,16,76,40,12);c.fillStyle='#12b886';c.fill();circ(-22,60,10,'#495057');circ(22,60,10,'#495057');c.restore()}
+
+/* ---------- 4. ROUTINE ---------- */
+addUI({rtTabs:[['صباحي','مسائي','تنظيف الأسنان'],['Le matin','Le soir','Brossage des dents'],['Morning','Evening','Brushing teeth'],['Mañana','Noche','Cepillado de dientes']],
+ rtAll:['أنجزت كل المهام! 🎉','Tout est fait ! 🎉','All done! 🎉','¡Todo hecho! 🎉'],teethStart:['ابدأ دقيقتين','Lancer 2 minutes','Start 2 minutes','Empezar 2 minutos'],
+ teethTip:['نظّف كل أسنانك: فوق وتحت، يمينًا ويسارًا','Brosse toutes tes dents : en haut, en bas, à droite, à gauche','Brush all your teeth: top, bottom, right and left','Cepilla todos tus dientes: arriba, abajo, a la derecha y a la izquierda'],
+ teethParts:[['الأسنان العليا – اليمين','الأسنان العليا – اليسار','الأسنان السفلى – اليمين','الأسنان السفلى – اليسار'],['En haut à droite','En haut à gauche','En bas à droite','En bas à gauche'],['Top right','Top left','Bottom right','Bottom left'],['Arriba a la derecha','Arriba a la izquierda','Abajo a la derecha','Abajo a la izquierda']],
+ teethDone:['أسنانك تلمع الآن! ✨','Tes dents brillent ! ✨','Your teeth are sparkling! ✨','¡Tus dientes brillan! ✨']});
+const RT=[[['🛏️',L4('أرتّب سريري','Je fais mon lit','I make my bed','Hago mi cama')],['🧼',L4('أغسل وجهي','Je me lave le visage','I wash my face','Me lavo la cara')],['🪥',L4('أنظّف أسناني','Je me brosse les dents','I brush my teeth','Me cepillo los dientes')],['🥣',L4('أتناول فطوري','Je prends mon petit-déjeuner','I eat breakfast','Desayuno')],['👕',L4('أرتدي ملابسي','Je m’habille','I get dressed','Me visto')],['🎒',L4('أجهّز حقيبتي','Je prépare mon cartable','I pack my school bag','Preparo mi mochila')]],
+ [['🧸',L4('أرتّب ألعابي','Je range mes jouets','I tidy my toys','Recojo mis juguetes')],['🛁',L4('أستحمّ','Je prends mon bain','I take a bath','Me baño')],['🪥',L4('أنظّف أسناني','Je me brosse les dents','I brush my teeth','Me cepillo los dientes')],['🧺',L4('أضع ملابسي في مكانها','Je range mes vêtements','I put my clothes away','Guardo mi ropa')],['📖',L4('أقرأ قصة','Je lis une histoire','I read a story','Leo un cuento')],['😴',L4('أنام باكرًا','Je me couche tôt','I go to bed early','Me acuesto temprano')]]];
+let RTS={tab:new Date().getHours()>=15?1:0,done:{},teeth:null};
+const rtKey=()=>'yas_rt_'+new Date().toISOString().slice(0,10);
+function rtLoad(){try{RTS.done=JSON.parse(localStorage.getItem(rtKey())||'{}')}catch(e){RTS.done={}}}
+function rtSave(){try{localStorage.setItem(rtKey(),JSON.stringify(RTS.done))}catch(e){}}
+function buildRoutine(){rtLoad();const tabs=$('rtTabs');tabs.innerHTML='';T('rtTabs').forEach((nm,i)=>{const b=document.createElement('button');b.className='chip';b.textContent=['🌅','🌙','🪥'][i]+' '+nm;b.setAttribute('aria-pressed',String(RTS.tab===i));b.onclick=()=>{RTS.tab=i;RTS.teeth=null;buildRoutine()};tabs.appendChild(b)});
+  const l=$('rtList');l.innerHTML='';$('rtTeeth').hidden=RTS.tab!==2;$('rtMeterW').hidden=RTS.tab===2;
+  if(RTS.tab<2){const list=RT[RTS.tab];let n=0;list.forEach(([e,nm],i)=>{const id=RTS.tab+'_'+i,on=!!RTS.done[id];if(on)n++;const b=document.createElement('button');b.className='task'+(on?' on':'');b.innerHTML=`<span class="te">${e}</span><span class="tn"></span><span class="tc">${on?'✔':''}</span>`;b.querySelector('.tn').textContent=tx(nm);
+      b.onclick=()=>{if(RTS.done[id]){delete RTS.done[id];rtSave();buildRoutine();return}RTS.done[id]=true;rtSave();addStar();celebrate();buildRoutine();if(list.every((_,k)=>RTS.done[RTS.tab+'_'+k])){toast(T('rtAll'));fanfare()}};l.appendChild(b)});
+    $('rtMeter').style.width=Math.round(n/list.length*100)+'%'}
+  else{$('rtTeethBtn').textContent=T('teethStart');$('rtTeethBtn').hidden=!!RTS.teeth;$('rtTeethTip').textContent=T('teethTip')}}
+$('rtTeethBtn').onclick=()=>{RTS.teeth={t0:now(),last:-1};$('rtTeethBtn').hidden=true;setMood('party')};
+function drawRoutine(t){const tb=RTS.tab;if(tb===1){vgrad(0,H,[[0,'#364fc7'],[1,'#748ffc']]);for(let i=0;i<40;i++){const a=P[i];circ(a[0]*W,a[1]*500,2+a[2]*2,'#fff',.5+.5*Math.sin(t*2+i))}circ(W*.8,170,60,'#fff3bf');circ(W*.8+25,155,55,'#364fc7')}else zoneBg(ZONES[0],t);
+  const ks=Math.min(1.05,W/650);
+  if(tb===2){const tt=RTS.teeth;let left=120,part=-1;if(tt){const e=now()-tt.t0;left=Math.max(0,120-e);part=Math.min(3,Math.floor(e/30));if(part!==tt.last&&e<120){tt.last=part;$('rtTeethTip').textContent=T('teethParts')[part];speak(T('teethParts')[part],true)}
+      if(e>=120&&!tt.done){tt.done=true;addStar(2);celebrate();fanfare();setMood('play');$('rtTeethTip').textContent=T('teethDone');setTimeout(()=>{RTS.teeth=null;if(mode==='routine')buildRoutine()},3000)}}
+    const cx=W/2+Math.min(300,W*.25),cy=380,r=Math.min(150,W*.16);circ(cx,cy,r+18,'#fff',.9);c.beginPath();c.arc(cx,cy,r,-PI/2,-PI/2+2*PI*(left/120));c.lineWidth=26;c.strokeStyle='#20c997';c.lineCap='round';c.stroke();
+    label(`${Math.floor(left/60)}:${String(Math.floor(left%60)).padStart(2,'0')}`,cx,cy+6,r*.55,'#0b3d4a','#fff','Cairo');yassine(W/2-Math.min(160,W*.13),930,ks,t,{item:tt&&!tt.done?'brush':null,wave:tt?.05:1});return}
+  yassine(W/2-Math.min(160,W*.13),930,ks,t,{jump:kidFx.jump&&t-kidFx.jump<1.2?Math.sin((t-kidFx.jump)/1.2*PI)*90:0});najma(W/2+Math.min(220,W*.2),380,.75,t)}
+
+/* ---------- 5. SAFETY ---------- */
+addUI({sfNums:['أرقام مهمة في المغرب: 19 الشرطة · 15 الوقاية المدنية (الإسعاف والإطفاء) · 177 الدرك الملكي','Numéros utiles au Maroc : 19 Police · 15 Protection civile (secours, pompiers) · 177 Gendarmerie royale','Useful numbers in Morocco: 19 Police · 15 Civil protection (ambulance, fire) · 177 Royal Gendarmerie','Números útiles en Marruecos: 19 Policía · 15 Protección civil (ambulancia, bomberos) · 177 Gendarmería Real']});
+const SAFE=[
+ {e:'🚦',q:L4('الإشارة حمراء والسيارات تمرّ. ماذا أفعل؟','Le feu est rouge et les voitures passent. Que faire ?','The light is red and cars are passing. What do I do?','El semáforo está en rojo y pasan coches. ¿Qué hago?'),ok:L4('أنتظر الضوء الأخضر وأمسك يد شخص كبير','J’attends le vert en donnant la main à un adulte','I wait for green and hold a grown-up’s hand','Espero el verde y doy la mano a un adulto'),no:L4('أجري بسرعة لأعبر','Je cours pour traverser','I run across quickly','Cruzo corriendo'),why:L4('نعبر فقط عند الضوء الأخضر، في ممرّ الراجلين، مع شخص كبير.','On traverse seulement au vert, sur le passage piéton, avec un adulte.','We cross only on green, at the crossing, with a grown-up.','Cruzamos solo en verde, por el paso de peatones y con un adulto.')},
+ {e:'🍬',q:L4('شخص لا أعرفه يعطيني حلوى ويقول: تعال معي.','Un inconnu m’offre un bonbon et me dit : viens avec moi.','A stranger offers me a sweet and says: come with me.','Un desconocido me ofrece un caramelo y dice: ven conmigo.'),ok:L4('أقول «لا» وأذهب إلى ماما أو بابا','Je dis « non » et je vais voir maman ou papa','I say “no” and go to mum or dad','Digo «no» y voy con mamá o papá'),no:L4('آخذ الحلوى وأذهب معه','Je prends le bonbon et je le suis','I take the sweet and go with them','Cojo el caramelo y me voy con él'),why:L4('لا نذهب أبدًا مع شخص لا نعرفه، ونخبر الكبار فورًا.','On ne part jamais avec un inconnu, et on prévient tout de suite un adulte.','We never go with someone we don’t know, and we tell a grown-up right away.','Nunca nos vamos con un desconocido y avisamos enseguida a un adulto.')},
+ {e:'💊',q:L4('وجدت دواءً ملوّنًا يشبه الحلوى.','J’ai trouvé un médicament qui ressemble à un bonbon.','I found a colorful medicine that looks like a sweet.','Encontré una medicina que parece un caramelo.'),ok:L4('أعطيه لشخص كبير','Je le donne à un adulte','I give it to a grown-up','Se la doy a un adulto'),no:L4('أتذوّقه','Je le goûte','I taste it','La pruebo'),why:L4('الدواء ليس حلوى، لا نأخذه إلا من الوالدين أو الطبيب.','Un médicament n’est pas un bonbon : seulement avec les parents ou le médecin.','Medicine isn’t candy: only from parents or the doctor.','La medicina no es un caramelo: solo con los padres o el médico.')},
+ {e:'🔌',q:L4('أرى مقبس الكهرباء في الحائط.','Je vois une prise électrique au mur.','I see a power socket on the wall.','Veo un enchufe en la pared.'),ok:L4('لا ألمسه ولا أضع فيه شيئًا','Je n’y touche pas et je n’y mets rien','I don’t touch it or put anything in it','No lo toco ni meto nada'),no:L4('أضع فيه أصبعي','J’y mets mon doigt','I put my finger in it','Meto el dedo'),why:L4('الكهرباء خطيرة جدًا، لا نلمس المقابس والأسلاك.','L’électricité est très dangereuse : on ne touche ni prises ni fils.','Electricity is very dangerous: we don’t touch sockets or wires.','La electricidad es muy peligrosa: no tocamos enchufes ni cables.')},
+ {e:'🛒',q:L4('تُهت في السوق ولا أرى ماما.','Je suis perdu au marché et je ne vois plus maman.','I’m lost at the market and can’t see mum.','Me perdí en el mercado y no veo a mamá.'),ok:L4('أبقى في مكاني وأطلب المساعدة من بائع أو شرطي','Je reste sur place et je demande de l’aide à un vendeur ou un policier','I stay where I am and ask a shopkeeper or police officer for help','Me quedo quieto y pido ayuda a un vendedor o a un policía'),no:L4('أخرج من السوق وحدي','Je sors du marché tout seul','I leave the market on my own','Salgo solo del mercado'),why:L4('نبقى في مكان واضح ونقول اسمنا ورقم هاتف الوالدين.','On reste dans un endroit visible et on donne son nom et le numéro des parents.','We stay somewhere visible and say our name and our parents’ phone number.','Nos quedamos en un sitio visible y decimos nuestro nombre y el teléfono de los padres.')},
+ {e:'🔥',q:L4('أرى دخانًا في البيت.','Je vois de la fumée dans la maison.','I see smoke in the house.','Veo humo en casa.'),ok:L4('أخرج بسرعة وأنادي الكبار','Je sors vite et j’appelle les adultes','I get out fast and call the grown-ups','Salgo rápido y llamo a los adultos'),no:L4('أختبئ تحت السرير','Je me cache sous le lit','I hide under the bed','Me escondo debajo de la cama'),why:L4('عند الحريق نخرج فورًا ولا نختبئ. رقم الوقاية المدنية هو 15.','En cas de feu, on sort tout de suite, on ne se cache pas. Protection civile : 15.','In a fire we get out at once and never hide. Civil protection: 15.','Si hay fuego, salimos enseguida y no nos escondemos. Protección civil: 15.')},
+ {e:'🍳',q:L4('الطبخة على النار ساخنة جدًا.','La casserole sur le feu est très chaude.','The pot on the stove is very hot.','La olla en el fuego está muy caliente.'),ok:L4('أبتعد عن الموقد','Je m’éloigne de la cuisinière','I stay away from the stove','Me alejo de la cocina'),no:L4('ألمس القِدر','Je touche la casserole','I touch the pot','Toco la olla'),why:L4('الموقد والقِدر الساخن يحرقان، نبتعد عنهما.','La cuisinière et les casseroles chaudes brûlent : on s’en éloigne.','Stoves and hot pots burn: we keep away.','La cocina y las ollas calientes queman: nos alejamos.')},
+ {e:'🏊',q:L4('أريد أن أسبح في البحر.','Je veux nager dans la mer.','I want to swim in the sea.','Quiero nadar en el mar.'),ok:L4('أسبح فقط مع شخص كبير يراقبني','Je nage seulement avec un adulte qui me surveille','I only swim with a grown-up watching me','Solo nado con un adulto que me vigila'),no:L4('أسبح وحدي بعيدًا','Je nage seul et loin','I swim alone, far out','Nado solo y lejos'),why:L4('نسبح دائمًا قرب شخص كبير وفي مكان آمن.','On nage toujours près d’un adulte, dans un endroit sûr.','We always swim near a grown-up in a safe place.','Siempre nadamos cerca de un adulto y en un lugar seguro.')}];
+let SF=null;
+function buildSafe(){SF={order:shuffle(SAFE.map((_,i)=>i)),i:0,score:0,miss:false,ans:false,res:[]};$('sfNums').textContent='📞 '+T('sfNums');showSafe()}
+function showSafe(){const s=SAFE[SF.order[SF.i]];SF.ans=false;SF.miss=false;dots($('sfDots'),8,SF.i,SF.res);$('sfQ').textContent=s.e+'  '+tx(s.q);$('sfWhy').textContent='';$('sfWhy').className='msg';$('sfNext').hidden=true;$('sfNext').textContent=T('next');
+  const box=$('sfOpts');box.innerHTML='';shuffle([['ok',s.ok],['no',s.no]]).forEach(([k,txt])=>{const b=optBtn('','#e6fcf5',b=>{if(SF.ans)return;
+    if(k==='ok'){SF.ans=true;b.classList.add('ok');if(!SF.miss){SF.score++;addStar()}SF.res[SF.i]=!SF.miss;celebrate();$('sfWhy').textContent='✅ '+tx(s.why);$('sfWhy').className='msg good';$('sfNext').hidden=false}
+    else{SF.miss=true;shake(b);sfx(false);$('sfWhy').textContent='⚠️ '+tx(s.why);$('sfWhy').className='msg bad'}});b.classList.add('txt','wide');b.textContent=tx(txt);box.appendChild(b)})}
+$('sfNext').onclick=()=>{SF.i++;if(SF.i>=8)finish(SF.score,8);else showSafe()};
+function drawSafe(t){zoneBg(ZONES[0],t);if(!SF)return;const s=SAFE[SF.order[SF.i]];const r=Math.min(170,W*.18);pedestal(W/2+Math.min(220,W*.18),380,r);emoji(s.e,W/2+Math.min(220,W*.18),380+6*Math.sin(t*2.5),r*1.45);
+  yassine(W/2-Math.min(200,W*.17),930,Math.min(1,W/700),t,{mood:SF.ans?'happy':'surprised',wave:SF.ans?1:.05,jump:kidFx.jump&&t-kidFx.jump<1.2?Math.sin((t-kidFx.jump)/1.2*PI)*80:0})}
+
+/* ---------- 6. MATH TOWN ---------- */
+addUI({mCount:['كم عددها؟','Combien y en a-t-il ?','How many are there?','¿Cuántos hay?'],mAdd:['كم المجموع؟','Combien ça fait en tout ?','How many altogether?','¿Cuántos hay en total?'],mSub:['كم يبقى؟','Combien en reste-t-il ?','How many are left?','¿Cuántos quedan?'],
+ mCmp:['أين الأكثر؟','Où y en a-t-il le plus ?','Which group has more?','¿Dónde hay más?'],gRed:['المجموعة الحمراء','Le groupe rouge','The red group','El grupo rojo'],gBlue:['المجموعة الزرقاء','Le groupe bleu','The blue group','El grupo azul']});
+const MOBJ=['🍎','⭐','🐟','🌸','🚗','🎈','🍓','🐥'];let MT=null;
+function genMath(){const qs=[];const types=shuffle(['count','count','add','add','add','sub','sub','cmp','cmp','count']);types.forEach(ty=>{const e=MOBJ[Math.floor(Math.random()*MOBJ.length)];let q={ty,e};
+  if(ty==='count'){q.n=1+Math.floor(Math.random()*10);q.ans=q.n}else if(ty==='add'){q.a=1+Math.floor(Math.random()*5);q.b=1+Math.floor(Math.random()*5);q.ans=q.a+q.b}
+  else if(ty==='sub'){q.a=3+Math.floor(Math.random()*7);q.b=1+Math.floor(Math.random()*(q.a-1));q.ans=q.a-q.b}else{q.a=1+Math.floor(Math.random()*9);do{q.b=1+Math.floor(Math.random()*9)}while(q.b===q.a);q.ans=q.a>q.b?'red':'blue'}qs.push(q)});return qs}
+function buildMath(){MT={qs:genMath(),i:0,score:0,miss:false,res:[],locked:false,t0:now()};showMath()}
+function showMath(){const q=MT.qs[MT.i];MT.miss=false;MT.locked=false;MT.t0=now();dots($('mtDots'),10,MT.i,MT.res);$('mtQ').textContent={count:T('mCount'),add:T('mAdd'),sub:T('mSub'),cmp:T('mCmp')}[q.ty];$('mtMsg').textContent='';$('mtMsg').className='msg';
+  const box=$('mtOpts');box.innerHTML='';let opts;if(q.ty==='cmp')opts=['red','blue'];else{const s=new Set([q.ans]);while(s.size<4){const v=q.ans+Math.floor(Math.random()*7)-3;if(v>=0&&v<=10)s.add(v)}opts=shuffle([...s])}
+  opts.forEach(v=>{const b=optBtn('',v==='red'?'#ffe3e3':v==='blue'?'#d0ebff':'#fff4e6',b=>{if(MT.locked)return;
+    if(v===q.ans){MT.locked=true;b.classList.add('ok');if(!MT.miss){MT.score++;addStar()}MT.res[MT.i]=!MT.miss;celebrate();$('mtMsg').textContent=praise();$('mtMsg').className='msg good';setTimeout(()=>{if(mode!=='math')return;MT.i++;if(MT.i>=10)finish(MT.score,10);else showMath()},1300)}
+    else{MT.miss=true;shake(b);sfx(false);$('mtMsg').textContent=T('wrong');$('mtMsg').className='msg bad'}});b.classList.add('txt');b.textContent=v==='red'?T('gRed'):v==='blue'?T('gBlue'):String(v);box.appendChild(b)})}
+function objRow(e,n,cx,cy,size,maxPerRow,cross){const per=Math.min(n,maxPerRow),rows=Math.ceil(n/per);for(let i=0;i<n;i++){const r=Math.floor(i/per),col=i%per,inRow=r<rows-1?per:n-r*per;const x=cx+(col-(inRow-1)/2)*size*1.15,y=cy+(r-(rows-1)/2)*size*1.15;emoji(e,x,y,size);
+  if(cross&&i>=n-cross){c.beginPath();c.moveTo(x-size*.4,y-size*.4);c.lineTo(x+size*.4,y+size*.4);c.moveTo(x+size*.4,y-size*.4);c.lineTo(x-size*.4,y+size*.4);c.lineWidth=8;c.strokeStyle='#e03131';c.stroke()}}}
+function drawMath(t){zoneBg(ZONES[3],t);if(!MT)return;const q=MT.qs[MT.i];const sz=Math.min(70,W/14);rr(40,170,W-80,520,30);c.fillStyle='rgba(255,255,255,.88)';c.fill();
+  if(q.ty==='count')objRow(q.e,q.n,W/2,420,sz,5);
+  else if(q.ty==='add'){const gx=Math.min(W*.25,380);objRow(q.e,q.a,W/2+(lang==='ar'?gx:-gx),420,sz,3);label('+',W/2,420,110,'#f59f00','#fff','Cairo');objRow(q.e,q.b,W/2-(lang==='ar'?gx:-gx),420,sz,3)}
+  else if(q.ty==='sub')objRow(q.e,q.a,W/2,420,sz,5,q.b);
+  else{const gx=Math.min(W*.22,340);rr(W/2-gx-180,240,360,360,30);c.fillStyle='#ffc9c9';c.fill();rr(W/2+gx-180,240,360,360,30);c.fillStyle='#a5d8ff';c.fill();objRow(q.e,q.a,W/2-gx,420,Math.min(56,sz),3);objRow(q.e,q.b,W/2+gx,420,Math.min(56,sz),3)}
+  najma(W-Math.min(130,W*.1),800,.55,t);yassine(Math.min(150,W*.12),980,Math.min(.7,W/900),t,{jump:kidFx.jump&&t-kidFx.jump<1.2?Math.sin((t-kidFx.jump)/1.2*PI)*80:0})}
+
+/* ================= APPS 2 (13 more) — each renders into the generic sheet #genPane ================= */
+const NA={};const pane=()=>$('genPane');
+function el(tag,cls,txt){const e=document.createElement(tag);if(cls)e.className=cls;if(txt!=null)e.textContent=txt;return e}
+function tabsRow(names,cur,on){const r=el('div','row');names.forEach((n,i)=>{const b=el('button','chip',n);b.setAttribute('aria-pressed',String(cur===i));b.onclick=()=>on(i);r.appendChild(b)});return r}
+function cpos(e){const r=cv.getBoundingClientRect();return{x:(e.clientX-r.left)/r.width*W,y:(e.clientY-r.top)/r.height*H}}
+['pointerdown','pointermove','pointerup','pointercancel'].forEach(ev=>cv.addEventListener(ev,e=>{const a=NA[mode];if(!a)return;const k={pointerdown:'down',pointermove:'move',pointerup:'up',pointercancel:'up'}[ev];if(a[k]){if(k==='down')cv.setPointerCapture(e.pointerId);a[k](cpos(e))}}));
+function jumpOf(t){return kidFx.jump&&t-kidFx.jump<1.2?Math.sin((t-kidFx.jump)/1.2*PI)*80:0}
+function speakIn(text,l){if(!('speechSynthesis' in window))return;const vs=speechSynthesis.getVoices().filter(v=>v.lang&&v.lang.toLowerCase().startsWith(l));if(!vs.length){toast(T('noTTS'));return}speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(text);u.voice=vs[0];u.lang=vs[0].lang;u.rate=.85;speechSynthesis.speak(u)}
+addUI({learnT:['تعلّم','Découvrir','Learn','Aprender'],quizT:['العب','Jouer','Play','Jugar'],listen:['استمع','Écouter','Listen','Escuchar'],prev:['السابق','Précédent','Previous','Anterior']});
+
+/* generic learn+quiz (events, morocco) */
+function makeLQ(id,items,bgFn){const S={tab:0,i:0,q:null};
+  NA[id]={build(){const p=pane();p.innerHTML='';p.appendChild(tabsRow([T('learnT'),T('quizT')],S.tab,i=>{S.tab=i;S.q=null;NA[id].build()}));
+    if(S.tab===0){const g=el('div','strip');items.forEach((it,i)=>{const b=el('button','ichip'+(i===S.i?' sel':''));b.textContent=it.e==='flag'?'🚩':it.e;b.setAttribute('aria-label',tx(it.n));b.onclick=()=>{S.i=i;S.t0=now();NA[id].build();speak(tx(it.n)+'. '+tx(it.d),true)};g.appendChild(b)});
+      const it=items[S.i];p.append(g,el('p','q',tx(it.n)),el('p','tdesc',tx(it.d)));const r=el('div','row');const l=el('button','candy',T('listen'));l.onclick=()=>speak(tx(it.n)+'. '+tx(it.d));r.appendChild(l);p.appendChild(r)}
+    else{if(!S.q)S.q={order:shuffle(items.map((_,i)=>i)).slice(0,6),i:0,score:0,miss:false,res:[]};const q=S.q;if(q.i>=6){finish(q.score,6);return}const ti=q.order[q.i],it=items[ti];
+      const d=el('div','dots');dots(d,6,q.i,q.res);const msg=el('p','msg');const g=el('div','answers');
+      shuffle([ti,...shuffle(items.map((_,i)=>i).filter(x=>x!==ti)).slice(0,3)]).forEach(j=>{const b=optBtn(`<span class="big-e">${items[j].e==='flag'?'🚩':items[j].e}</span>`,'#e6fcf5',b=>{
+        if(j===ti){b.classList.add('ok');if(!q.miss){q.score++;addStar()}q.res[q.i]=!q.miss;q.miss=false;celebrate();msg.textContent=praise();msg.className='msg good';setTimeout(()=>{if(mode!==id)return;q.i++;NA[id].build()},1200)}
+        else{q.miss=true;shake(b);sfx(false);msg.textContent=T('wrong');msg.className='msg bad'}});b.append(tx(items[j].n));g.appendChild(b)});p.append(d,el('p','q',tx(it.q)),g,msg)}},
+   draw(t){bgFn(t);const it=S.tab===0?items[S.i]:null;const r=Math.min(170,W*.18);const cx=W/2+Math.min(220,W*.18);
+     if(it){pedestal(cx,380,r);if(it.e==='flag')drawFlag(cx,380+6*Math.sin(t*2),r*1.6);else emoji(it.e,cx,380+6*Math.sin(t*2.5),r*1.45);label(tx(it.n),cx,380+r*1.25+60,Math.min(64,W*.07),'#fff','#0b3d4a')}
+     else najma(cx,380,.9,t);yassine(W/2-Math.min(200,W*.17),930,Math.min(1,W/700),t,{jump:jumpOf(t)})}};return S}
+function drawFlag(x,y,w){const h=w*.66;c.fillStyle='#c1272d';c.fillRect(x-w/2,y-h/2,w,h);c.beginPath();const r=h*.3;for(let i=0;i<=5;i++){const a=-PI/2+i*4*PI/5;c.lineTo(x+r*Math.cos(a),y+r*Math.sin(a))}c.lineWidth=w*.03;c.strokeStyle='#006233';c.lineJoin='miter';c.stroke()}
+
+/* ---------- EVENTS ---------- */
+makeLQ('events',[
+ {e:'🌙',n:L4('رمضان','Le Ramadan','Ramadan','Ramadán'),d:L4('شهر الصيام: يصوم الكبار من الفجر إلى المغرب، ونجتمع على الإفطار.','Le mois du jeûne : les grands jeûnent de l’aube au coucher du soleil, puis on partage le ftour.','The month of fasting: grown-ups fast from dawn to sunset, then we share iftar.','El mes del ayuno: los mayores ayunan del alba a la puesta del sol y luego compartimos el iftar.'),q:L4('في أيّ شهر يصوم الكبار؟','Pendant quel mois les grands jeûnent-ils ?','In which month do grown-ups fast?','¿En qué mes ayunan los mayores?')},
+ {e:'🍪',n:L4('عيد الفطر','L’Aïd el-Fitr','Eid al-Fitr','Eid al-Fitr'),d:L4('يأتي بعد رمضان: نلبس ملابس جديدة ونزور العائلة ونأكل الحلويات.','Il arrive après le Ramadan : habits neufs, visites en famille et gâteaux.','It comes after Ramadan: new clothes, family visits and sweets.','Llega después del Ramadán: ropa nueva, visitas a la familia y dulces.'),q:L4('أيّ عيد يأتي بعد رمضان؟','Quelle fête vient après le Ramadan ?','Which holiday comes after Ramadan?','¿Qué fiesta llega después del Ramadán?')},
+ {e:'🐑',n:L4('عيد الأضحى','L’Aïd al-Adha','Eid al-Adha','Eid al-Adha'),d:L4('عيد الكبش: نجتمع مع العائلة ونتقاسم الطعام مع المحتاجين.','La fête du mouton : on se retrouve en famille et on partage avec ceux qui en ont besoin.','The sheep festival: families gather and share food with people in need.','La fiesta del cordero: la familia se reúne y comparte comida con quien lo necesita.'),q:L4('في أيّ عيد نرى الكبش؟','Pendant quelle fête voit-on le mouton ?','At which holiday do we see the sheep?','¿En qué fiesta vemos el cordero?')},
+ {e:'🌾',n:L4('رأس السنة الأمازيغية','Le Nouvel An amazigh','Amazigh New Year','Año Nuevo amazigh'),d:L4('يوم 14 يناير، نحتفل ببداية السنة الفلاحية بأطباق تقليدية.','Le 14 janvier, on fête le début de l’année agricole avec des plats traditionnels.','On January 14, we celebrate the start of the farming year with traditional dishes.','El 14 de enero celebramos el inicio del año agrícola con platos tradicionales.'),q:L4('ماذا نحتفل به يوم 14 يناير؟','Que fête-t-on le 14 janvier ?','What do we celebrate on January 14?','¿Qué celebramos el 14 de enero?')},
+ {e:'👑',n:L4('عيد العرش','La Fête du Trône','Throne Day','Fiesta del Trono'),d:L4('يوم 30 يوليوز، عيد وطني نحتفل به بالأعلام والأناشيد.','Le 30 juillet, une fête nationale avec drapeaux et chants.','On July 30, a national holiday with flags and songs.','El 30 de julio, fiesta nacional con banderas y canciones.'),q:L4('أيّ عيد وطني يكون يوم 30 يوليوز؟','Quelle fête nationale a lieu le 30 juillet ?','Which national holiday is on July 30?','¿Qué fiesta nacional es el 30 de julio?')},
+ {e:'🚩',n:L4('ذكرى المسيرة الخضراء','L’anniversaire de la Marche verte','Green March Day','Aniversario de la Marcha Verde'),d:L4('يوم 6 نونبر، نتذكّر المسيرة الخضراء.','Le 6 novembre, on se souvient de la Marche verte.','On November 6, we remember the Green March.','El 6 de noviembre recordamos la Marcha Verde.'),q:L4('ماذا نتذكّر يوم 6 نونبر؟','Que commémore-t-on le 6 novembre ?','What do we remember on November 6?','¿Qué recordamos el 6 de noviembre?')},
+ {e:'🎖️',n:L4('عيد الاستقلال','La Fête de l’indépendance','Independence Day','Día de la Independencia'),d:L4('يوم 18 نونبر، نحتفل باستقلال المغرب.','Le 18 novembre, on fête l’indépendance du Maroc.','On November 18, we celebrate Morocco’s independence.','El 18 de noviembre celebramos la independencia de Marruecos.'),q:L4('ماذا نحتفل به يوم 18 نونبر؟','Que fête-t-on le 18 novembre ?','What do we celebrate on November 18?','¿Qué celebramos el 18 de noviembre?')},
+ {e:'🎆',n:L4('رأس السنة الميلادية','Le Nouvel An','New Year’s Day','Año Nuevo'),d:L4('يوم 1 يناير، تبدأ سنة جديدة.','Le 1er janvier, une nouvelle année commence.','On January 1, a new year begins.','El 1 de enero empieza un año nuevo.'),q:L4('ماذا يبدأ يوم 1 يناير؟','Qu’est-ce qui commence le 1er janvier ?','What begins on January 1?','¿Qué empieza el 1 de enero?')}],
+ t=>{vgrad(0,H,[[0,'#5f3dc4'],[1,'#f783ac']]);confetti(t,0,30)});
+
+/* ---------- MOROCCO ---------- */
+makeLQ('morocco',[
+ {e:'🏛️',n:L4('الرباط','Rabat','Rabat','Rabat'),d:L4('عاصمة المغرب، وفيها صومعة حسان.','La capitale du Maroc, avec la tour Hassan.','The capital of Morocco, home of the Hassan Tower.','La capital de Marruecos, con la torre Hassan.'),q:L4('ما هي عاصمة المغرب؟','Quelle est la capitale du Maroc ?','What is the capital of Morocco?','¿Cuál es la capital de Marruecos?')},
+ {e:'🕌',n:L4('الدار البيضاء','Casablanca','Casablanca','Casablanca'),d:L4('أكبر مدينة في المغرب، وفيها مسجد الحسن الثاني على البحر.','La plus grande ville, avec la mosquée Hassan II au bord de la mer.','The biggest city, with the Hassan II Mosque by the sea.','La ciudad más grande, con la mezquita Hassan II junto al mar.'),q:L4('أين يوجد مسجد الحسن الثاني؟','Où se trouve la mosquée Hassan II ?','Where is the Hassan II Mosque?','¿Dónde está la mezquita Hassan II?')},
+ {e:'📚',n:L4('فاس','Fès','Fez','Fez'),d:L4('مدينة عريقة، فيها جامعة القرويين، من أقدم الجامعات في العالم.','Une ville ancienne avec Al Quaraouiyine, l’une des plus vieilles universités du monde.','An ancient city with Al Quaraouiyine, one of the oldest universities in the world.','Una ciudad antigua con Al Qarawiyyin, una de las universidades más antiguas del mundo.'),q:L4('أين توجد جامعة القرويين؟','Où se trouve l’université Al Quaraouiyine ?','Where is Al Quaraouiyine university?','¿Dónde está la universidad de Al Qarawiyyin?')},
+ {e:'🎭',n:L4('مراكش','Marrakech','Marrakesh','Marrakech'),d:L4('المدينة الحمراء، وفيها ساحة جامع الفنا المليئة بالحكايات.','La ville rouge, avec la place Jemaa el-Fna pleine de conteurs.','The red city, with Jemaa el-Fna square full of storytellers.','La ciudad roja, con la plaza Yamaa el Fna llena de cuentacuentos.'),q:L4('أيّ مدينة تُسمّى المدينة الحمراء؟','Quelle ville appelle-t-on la ville rouge ?','Which city is called the red city?','¿Qué ciudad se llama la ciudad roja?')},
+ {e:'💙',n:L4('شفشاون','Chefchaouen','Chefchaouen','Chefchaouen'),d:L4('المدينة الزرقاء في جبال الريف.','La ville bleue dans les montagnes du Rif.','The blue city in the Rif mountains.','La ciudad azul en las montañas del Rif.'),q:L4('أيّ مدينة تُسمّى المدينة الزرقاء؟','Quelle ville appelle-t-on la ville bleue ?','Which city is called the blue city?','¿Qué ciudad se llama la ciudad azul?')},
+ {e:'🐪',n:L4('مرزوكة','Merzouga','Merzouga','Merzouga'),d:L4('في الصحراء: كثبان رملية كبيرة وجمال.','Dans le désert : de grandes dunes et des chameaux.','In the desert: huge sand dunes and camels.','En el desierto: grandes dunas y camellos.'),q:L4('أين نرى الكثبان الرملية والجمال؟','Où voit-on de grandes dunes et des chameaux ?','Where do we see big dunes and camels?','¿Dónde vemos grandes dunas y camellos?')},
+ {e:'🏖️',n:L4('أكادير','Agadir','Agadir','Agadir'),d:L4('مدينة على المحيط الأطلسي، بشاطئ طويل وشمس كثيرة.','Une ville sur l’Atlantique, avec une longue plage et beaucoup de soleil.','A city on the Atlantic with a long beach and lots of sun.','Una ciudad en el Atlántico con una playa larga y mucho sol.'),q:L4('أيّ مدينة معروفة بشاطئها الطويل على المحيط الأطلسي؟','Quelle ville est connue pour sa longue plage sur l’Atlantique ?','Which city is known for its long Atlantic beach?','¿Qué ciudad es conocida por su larga playa en el Atlántico?')},
+ {e:'⛵',n:L4('طنجة','Tanger','Tangier','Tánger'),d:L4('في الشمال، حيث يلتقي البحر الأبيض المتوسط بالمحيط الأطلسي.','Au nord, là où la Méditerranée rencontre l’Atlantique.','In the north, where the Mediterranean meets the Atlantic.','En el norte, donde el Mediterráneo se une al Atlántico.'),q:L4('أين يلتقي البحر الأبيض المتوسط بالمحيط الأطلسي؟','Où la Méditerranée rencontre-t-elle l’Atlantique ?','Where does the Mediterranean meet the Atlantic?','¿Dónde se une el Mediterráneo con el Atlántico?')},
+ {e:'🫒',n:L4('وزان','Ouezzane','Ouezzane','Ouezzane'),d:L4('مدينة في شمال المغرب، معروفة بزيت الزيتون.','Une ville du nord du Maroc, connue pour son huile d’olive.','A town in northern Morocco, known for its olive oil.','Una ciudad del norte de Marruecos, conocida por su aceite de oliva.'),q:L4('أيّ مدينة في الشمال معروفة بزيت الزيتون؟','Quelle ville du nord est connue pour son huile d’olive ?','Which northern town is known for its olive oil?','¿Qué ciudad del norte es conocida por su aceite de oliva?')},
+ {e:'🍲',n:L4('الكسكس','Le couscous','Couscous','El cuscús'),d:L4('طبق مغربي نأكله مع العائلة، غالبًا يوم الجمعة.','Un plat marocain qu’on mange en famille, souvent le vendredi.','A Moroccan dish we eat with family, often on Fridays.','Un plato marroquí que comemos en familia, a menudo los viernes.'),q:L4('ما الطبق الذي نأكله غالبًا يوم الجمعة؟','Quel plat mange-t-on souvent le vendredi ?','Which dish do we often eat on Fridays?','¿Qué plato comemos a menudo los viernes?')},
+ {e:'🍵',n:L4('أتاي','Le thé à la menthe','Mint tea','El té con menta'),d:L4('الشاي بالنعناع، مشروب الضيافة المغربي.','Le thé à la menthe, la boisson de l’accueil marocain.','Mint tea, the Moroccan drink of welcome.','El té con menta, la bebida marroquí de bienvenida.'),q:L4('ما المشروب الذي نقدّمه للضيوف؟','Quelle boisson offre-t-on aux invités ?','Which drink do we offer to guests?','¿Qué bebida ofrecemos a los invitados?')},
+ {e:'flag',n:L4('العلم المغربي','Le drapeau marocain','The Moroccan flag','La bandera de Marruecos'),d:L4('أحمر، وفي وسطه نجمة خضراء خماسية.','Rouge, avec une étoile verte à cinq branches au milieu.','Red, with a green five-pointed star in the middle.','Roja, con una estrella verde de cinco puntas en el centro.'),q:L4('ما هو العلم الأحمر بنجمة خضراء؟','Quel drapeau est rouge avec une étoile verte ?','Which flag is red with a green star?','¿Qué bandera es roja con una estrella verde?')}],
+ t=>{vgrad(0,H,[[0,'#ffa94d'],[.6,'#ffe8cc'],[1,'#e9b872']]);sun(W*.8,190,60,t);c.beginPath();c.moveTo(0,820);for(let x=0;x<=W;x+=40)c.lineTo(x,760+40*Math.sin(x/220));c.lineTo(W,H);c.lineTo(0,H);c.closePath();c.fillStyle='#e8a849';c.fill()});
+
+/* ---------- PRAYER ---------- */
+addUI({prTabs:[['الوضوء','رتّب الخطوات','الصلوات الخمس'],['Les ablutions','Remets dans l’ordre','Les 5 prières'],['Wudu','Put in order','The 5 prayers'],['El wudu','Ordena los pasos','Las 5 oraciones']],
+ prTip:['تعلّم الوضوء والصلاة مع ماما أو بابا.','Apprends les ablutions et la prière avec maman ou papa.','Learn wudu and prayer with mum or dad.','Aprende el wudu y la oración con mamá o papá.'],prOrder:['اضغط على الخطوات بالترتيب الصحيح','Touche les étapes dans le bon ordre','Tap the steps in the right order','Toca los pasos en el orden correcto'],
+ rk:[n=>n===2?'ركعتان':`${n} ركعات`,n=>`${n} rak‘as`,n=>`${n} rak‘ahs`,n=>`${n} rakats`]});
+const WUDU=[['🤲',L4('النية والبسملة','L’intention et « Bismillah »','Intention and “Bismillah”','La intención y «Bismillah»')],['👐',L4('غسل الكفين ثلاث مرات','Se laver les mains 3 fois','Wash the hands 3 times','Lavarse las manos 3 veces')],['👄',L4('المضمضة','Se rincer la bouche','Rinse the mouth','Enjuagarse la boca')],['👃',L4('الاستنشاق والاستنثار','Se rincer le nez','Rinse the nose','Enjuagarse la nariz')],['🙂',L4('غسل الوجه','Se laver le visage','Wash the face','Lavarse la cara')],['💪',L4('غسل اليدين إلى المرفقين','Se laver les bras jusqu’aux coudes','Wash the arms up to the elbows','Lavarse los brazos hasta los codos')],['🧒',L4('مسح الرأس','Passer les mains mouillées sur la tête','Wipe the head with wet hands','Pasar las manos mojadas por la cabeza')],['👂',L4('مسح الأذنين','Passer les doigts sur les oreilles','Wipe the ears','Pasar los dedos por las orejas')],['🦶',L4('غسل الرجلين إلى الكعبين','Se laver les pieds jusqu’aux chevilles','Wash the feet up to the ankles','Lavarse los pies hasta los tobillos')]];
+const PRAYERS=[['🌅',L4('الفجر','Al-Fajr','Fajr','Fajr'),2,L4('قبل شروق الشمس','Avant le lever du soleil','Before sunrise','Antes del amanecer')],['☀️',L4('الظهر','Ad-Dhohr','Dhuhr','Dhuhr'),4,L4('في وسط النهار','À midi','At midday','A mediodía')],['🌤️',L4('العصر','Al-‘Asr','Asr','Asr'),4,L4('بعد الظهر','L’après-midi','In the afternoon','Por la tarde')],['🌇',L4('المغرب','Al-Maghrib','Maghrib','Maghrib'),3,L4('بعد غروب الشمس','Après le coucher du soleil','After sunset','Tras la puesta del sol')],['🌙',L4('العشاء','Al-‘Icha','Isha','Isha'),4,L4('في الليل','La nuit','At night','Por la noche')]];
+const PR={tab:0,i:0,ord:null};
+NA.prayer={build(){const p=pane();p.innerHTML='';p.appendChild(tabsRow(T('prTabs'),PR.tab,i=>{PR.tab=i;PR.ord=null;NA.prayer.build()}));
+  if(PR.tab===0){const l=el('div','tasks');WUDU.forEach(([e,n],i)=>{const b=el('button','task'+(i===PR.i?' on':''));b.innerHTML=`<span class="te">${e}</span><span class="tn"></span><span class="tc">${i+1}</span>`;b.querySelector('.tn').textContent=tx(n);b.querySelector('.tc').style.background='#0ca678';b.onclick=()=>{PR.i=i;NA.prayer.build();speak(tx(n),true)};l.appendChild(b)});p.append(l,el('p','tdesc','💡 '+T('prTip')))}
+  else if(PR.tab===1){if(!PR.ord)PR.ord={next:0,miss:false,sh:shuffle(WUDU.map((_,i)=>i))};const o=PR.ord;p.appendChild(el('p','q',T('prOrder')));const m=el('div','meter');const mi=el('i');mi.style.width=Math.round(o.next/9*100)+'%';m.appendChild(mi);p.appendChild(m);const l=el('div','tasks');
+    o.sh.forEach(i=>{const [e,n]=WUDU[i];const done=i<o.next;const b=el('button','task'+(done?' on':''));b.innerHTML=`<span class="te">${e}</span><span class="tn"></span><span class="tc">${done?i+1:''}</span>`;b.querySelector('.tn').textContent=tx(n);
+      b.onclick=()=>{if(done)return;if(i===o.next){o.next++;sfx(true);kidFx.jump=now();if(o.next===9){addStar(3);celebrate();setTimeout(()=>finish(0,0,T('doneGood')+' 🌟'),900);return}NA.prayer.build()}else{shake(b);sfx(false)}};l.appendChild(b)});p.appendChild(l)}
+  else{const l=el('div','tasks');PRAYERS.forEach(([e,n,k,tm])=>{const b=el('div','task');b.innerHTML=`<span class="te">${e}</span><span class="tn"></span><span class="tc" style="width:auto;padding:0 10px;border-radius:999px;background:#0ca678;font-size:14px"></span>`;b.querySelector('.tn').textContent=tx(n)+' — '+tx(tm);b.querySelector('.tc').textContent=T('rk',k);l.appendChild(b)});p.append(l,el('p','tdesc','💡 '+T('prTip')))}},
+ draw(t){vgrad(0,H,[[0,'#c5f6fa'],[1,'#e6fcf5']]);const cx=W/2+Math.min(230,W*.2);
+  if(PR.tab===2){PRAYERS.forEach(([e],i)=>{const a=PI+i*PI/4;emoji(e,cx+Math.cos(a)*-170,420+Math.sin(a)*-170+170,70)})}
+  else{const i=PR.tab===0?PR.i:Math.min(8,PR.ord?PR.ord.next:0);const r=Math.min(150,W*.16);pedestal(cx,380,r);emoji(WUDU[i][0],cx,380+6*Math.sin(t*2.5),r*1.4);label(String(i+1),cx+r,380-r,60,'#fff','#0ca678','Cairo')}
+  yassine(W/2-Math.min(200,W*.17),930,Math.min(1,W/700),t,{jump:jumpOf(t),wave:.3})}};
+
+/* ---------- LANGUAGES ---------- */
+addUI({lnQ:[(e,l)=>`كيف نقول ${e} بـ${l}؟`,(e,l)=>`Comment dit-on ${e} en ${l} ?`,(e,l)=>`How do you say ${e} in ${l}?`,(e,l)=>`¿Cómo se dice ${e} en ${l}?`],
+ lnNames:[{ar:'العربية',fr:'الفرنسية',en:'الإنجليزية',es:'الإسبانية'},{ar:'arabe',fr:'français',en:'anglais',es:'espagnol'},{ar:'Arabic',fr:'French',en:'English',es:'Spanish'},{ar:'árabe',fr:'francés',en:'inglés',es:'español'}]});
+const WORDS=[['👋',L4('مرحبًا','Bonjour','Hello','Hola')],['🙏',L4('شكرًا','Merci','Thank you','Gracias')],['🐱',L4('قطّ','Chat','Cat','Gato')],['🐶',L4('كلب','Chien','Dog','Perro')],['🍎',L4('تفاحة','Pomme','Apple','Manzana')],['💧',L4('ماء','Eau','Water','Agua')],['🏠',L4('بيت','Maison','House','Casa')],['☀️',L4('شمس','Soleil','Sun','Sol')],['📖',L4('كتاب','Livre','Book','Libro')],['🚗',L4('سيارة','Voiture','Car','Coche')],['⚽',L4('كرة','Ballon','Ball','Pelota')],['👩',L4('أمّ','Maman','Mum','Mamá')],['👨',L4('أب','Papa','Dad','Papá')],['🏫',L4('مدرسة','École','School','Escuela')],['👍',L4('نعم','Oui','Yes','Sí')],['👎',L4('لا','Non','No','No')]];
+const LN={tab:0,i:0,q:null};const LNS=['ar','fr','en','es'];
+NA.langs={build(){const p=pane();p.innerHTML='';p.appendChild(tabsRow([T('learnT'),T('quizT')],LN.tab,i=>{LN.tab=i;LN.q=null;NA.langs.build()}));
+  if(LN.tab===0){const g=el('div','strip');WORDS.forEach(([e],i)=>{const b=el('button','ichip'+(i===LN.i?' sel':''),e);b.onclick=()=>{LN.i=i;NA.langs.build()};g.appendChild(b)});p.appendChild(g);
+    const g2=el('div','answers');LNS.forEach(l=>{const b=optBtn('',['#ffe3e3','#d0ebff','#d3f9d8','#fff3bf'][LNS.indexOf(l)],()=>speakIn(WORDS[LN.i][1][l],l));b.classList.add('txt');b.innerHTML=`<small>${T('lnNames')[l]}</small>`;b.insertBefore(document.createTextNode(WORDS[LN.i][1][l]),b.firstChild);b.lang=l;g2.appendChild(b)});p.appendChild(g2)}
+  else{if(!LN.q)LN.q={i:0,score:0,miss:false,res:[],items:shuffle(WORDS.map((_,i)=>i)).slice(0,8).map(w=>({w,l:shuffle(LNS.filter(x=>x!==lang))[0]}))};const q=LN.q;if(q.i>=8){finish(q.score,8);return}const cur=q.items[q.i];
+    const d=el('div','dots');dots(d,8,q.i,q.res);const msg=el('p','msg');const g=el('div','answers');shuffle([cur.w,...shuffle(WORDS.map((_,i)=>i).filter(x=>x!==cur.w)).slice(0,3)]).forEach(j=>{const b=optBtn('','#e6fcf5',b=>{
+      if(j===cur.w){b.classList.add('ok');if(!q.miss){q.score++;addStar()}q.res[q.i]=!q.miss;q.miss=false;celebrate();speakIn(WORDS[j][1][cur.l],cur.l);msg.textContent=praise();msg.className='msg good';setTimeout(()=>{if(mode!=='langs')return;q.i++;NA.langs.build()},1300)}
+      else{q.miss=true;shake(b);sfx(false);msg.textContent=T('wrong');msg.className='msg bad'}});b.classList.add('txt');b.textContent=WORDS[j][1][cur.l];b.lang=cur.l;g.appendChild(b)});
+    p.append(d,el('p','q',T('lnQ',WORDS[cur.w][0],T('lnNames')[cur.l])),g,msg)}},
+ draw(t){zoneBg(ZONES[3],t);const i=LN.tab===0?LN.i:(LN.q&&LN.q.i<8?LN.q.items[LN.q.i].w:0);const cx=W/2+Math.min(220,W*.18),r=Math.min(160,W*.17);pedestal(cx,380,r);emoji(WORDS[i][0],cx,380+6*Math.sin(t*2.5),r*1.45);
+  yassine(W/2-Math.min(200,W*.17),930,Math.min(1,W/700),t,{jump:jumpOf(t)});if(LN.tab===0)LNS.forEach((l,k)=>{const a=-PI/2+k*PI/2;label(WORDS[i][1][l],cx+Math.cos(a)*r*1.9,380+Math.sin(a)*r*1.5,Math.min(40,W*.04),'#fff',['#e03131','#1c7ed6','#2f9e44','#f59f00'][k],'Cairo')})}};
+
+/* ---------- FIRST WORDS (1–3 years) with parent's voice ---------- */
+addUI({fwRec:['🎙️ سجّل صوتك للكلمات','🎙️ Enregistre ta voix','🎙️ Record your voice','🎙️ Graba tu voz'],fwRecOn:['اضغط على كلمة لتسجّلها (3 ثوانٍ)','Touche un mot pour l’enregistrer (3 s)','Tap a word to record it (3 s)','Toca una palabra para grabarla (3 s)'],fwRecDone:['تم الحفظ ✔','Enregistré ✔','Saved ✔','Guardado ✔'],
+ fwNoMic:['تعذّر تشغيل الميكروفون. اسمح به من إعدادات المتصفح.','Micro indisponible. Autorise-le dans le navigateur.','Microphone unavailable. Allow it in the browser.','Micrófono no disponible. Permítelo en el navegador.'],fwHint:['للصغار جدًا: اضغط على الصورة واسمع الكلمة','Pour les tout-petits : touche l’image et écoute le mot','For little ones: tap a picture and hear the word','Para los más pequeños: toca la imagen y escucha la palabra']});
+const FW=[['👩',L4('ماما','Maman','Mummy','Mamá')],['👨',L4('بابا','Papa','Daddy','Papá')],['💧',L4('ماء','De l’eau','Water','Agua')],['🍞',L4('خبز','Du pain','Bread','Pan')],['🥛',L4('حليب','Du lait','Milk','Leche')],['🐱',L4('قطّة','Chat','Cat','Gato')],['⚽',L4('كرة','Ballon','Ball','Pelota')],['🚗',L4('سيارة','Voiture','Car','Coche')],['😴',L4('نوم','Dodo','Sleep','Dormir')],['🍽️',L4('أكل','Manger','Eat','Comer')],['🛁',L4('حمّام','Bain','Bath','Baño')],['🤗',L4('حضن','Câlin','Hug','Abrazo')]];
+let _rdb=null;function rdb(){return new Promise((res,rej)=>{if(_rdb)return res(_rdb);if(!window.indexedDB)return rej();const r=indexedDB.open('yassine',1);r.onupgradeneeded=()=>r.result.createObjectStore('rec');r.onsuccess=()=>{_rdb=r.result;res(_rdb)};r.onerror=()=>rej()})}
+async function recGet(k){try{const db=await rdb();return await new Promise(res=>{const q=db.transaction('rec').objectStore('rec').get(k);q.onsuccess=()=>res(q.result||null);q.onerror=()=>res(null)})}catch(e){return null}}
+async function recPut(k,v){try{const db=await rdb();await new Promise(res=>{const tx2=db.transaction('rec','readwrite');tx2.objectStore('rec').put(v,k);tx2.oncomplete=res;tx2.onerror=res})}catch(e){}}
+async function recordFor(sec){if(!navigator.mediaDevices||!window.MediaRecorder)throw 0;const st=await navigator.mediaDevices.getUserMedia({audio:true});return await new Promise(res=>{const ch=[];const r=new MediaRecorder(st);r.ondataavailable=e=>{if(e.data.size)ch.push(e.data)};r.onstop=()=>{st.getTracks().forEach(t=>t.stop());res(new Blob(ch,{type:r.mimeType||'audio/webm'}))};r.start();setTimeout(()=>r.stop(),sec*1000)})}
+const FWS={i:0,rec:false,busy:false,t0:0};const fwAudio=new Audio();
+NA.firstword={build(){const p=pane();p.innerHTML='';p.appendChild(el('p','tdesc',T('fwHint')));const g=el('div','answers six');FW.forEach(([e,n],i)=>{const b=optBtn(`<span class="big-e" style="font-size:44px">${e}</span>`,i===FWS.i?'#ffe3ec':'#f1f3f5',async()=>{FWS.i=i;FWS.t0=now();
+   if(FWS.rec){if(FWS.busy)return;FWS.busy=true;b.style.background='#ffc9c9';try{const bl=await recordFor(3);await recPut(lang+'_'+i,bl);toast(T('fwRecDone'))}catch(e){toast(T('fwNoMic'))}FWS.busy=false;NA.firstword.build();return}
+   const bl=await recGet(lang+'_'+i);if(bl){fwAudio.src=URL.createObjectURL(bl);fwAudio.play().catch(()=>{})}else speak(tx(n));NA.firstword.build()});b.append(tx(n));g.appendChild(b)});p.appendChild(g);
+  const r=el('div','row');const rb=el('button','candy'+(FWS.rec?'':' alt'),FWS.rec?T('fwRecOn'):T('fwRec'));rb.onclick=()=>{FWS.rec=!FWS.rec;NA.firstword.build()};r.appendChild(rb);p.appendChild(r)},
+ draw(t){vgrad(0,H,[[0,'#fff0f6'],[1,'#e7f5ff']]);for(let i=0;i<10;i++){const a=P[i];circ(a[0]*W,a[1]*H,20+a[2]*40,['#ffd8e6','#d0ebff','#fff3bf'][i%3],.6)}
+  const [e,n]=FW[FWS.i];const k=pop(t,FWS.t0,.7);const r=Math.min(200,W*.22);if(k>.02){c.save();c.translate(W/2,400);c.scale(k,k);circ(0,0,r*1.15,'#fff');emoji(e,0,6*Math.sin(t*3),r*1.5);c.restore()}
+  label(tx(n),W/2,400+r*1.2+70,Math.min(110,W*.12),'#fff','#e64980');najma(W-Math.min(140,W*.12),200,.7,t)}};
+
+/* ---------- FAMILY GAMES (2 players) ---------- */
+addUI({fmP:[['الأزرق','الأحمر'],['Bleu','Rouge'],['Blue','Red'],['Azul','Rojo']],fmTurn:[p=>`دور اللاعب ${p}`,p=>`Au tour du joueur ${p}`,p=>`${p} player’s turn`,p=>`Turno del jugador ${p}`],
+ fmFind:[n=>`أين ${n}؟`,n=>`Où est ${n} ?`,n=>`Where is ${n}?`,n=>`¿Dónde está ${n}?`],fmSum:[(a,b)=>`كم يساوي ${a} + ${b}؟`,(a,b)=>`Combien font ${a} + ${b} ?`,(a,b)=>`What is ${a} + ${b}?`,(a,b)=>`¿Cuánto es ${a} + ${b}?`],
+ fmWin:[p=>`فاز اللاعب ${p}! 🏆`,p=>`Le joueur ${p} gagne ! 🏆`,p=>`${p} player wins! 🏆`,p=>`¡Gana el jugador ${p}! 🏆`],fmTie:['تعادل! كلاكما بطل 🤝','Égalité ! Vous êtes tous les deux champions 🤝','It’s a tie! You’re both champions 🤝','¡Empate! Los dos sois campeones 🤝']});
+const FOBJ=[['🍎',L4('التفاحة','la pomme','the apple','la manzana')],['🐱',L4('القطّ','le chat','the cat','el gato')],['🚗',L4('السيارة','la voiture','the car','el coche')],['⚽',L4('الكرة','le ballon','the ball','la pelota')],['🌙',L4('القمر','la lune','the moon','la luna')],['🐟',L4('السمكة','le poisson','the fish','el pez')],['🌳',L4('الشجرة','l’arbre','the tree','el árbol')],['🏠',L4('البيت','la maison','the house','la casa')],['🎈',L4('البالونة','le ballon de baudruche','the balloon','el globo')],['⭐',L4('النجمة','l’étoile','the star','la estrella')],['🍌',L4('الموزة','la banane','the banana','el plátano')],['🐘',L4('الفيل','l’éléphant','the elephant','el elefante')]];
+let FM=null;
+function fmNew(){const qs=[];for(let i=0;i<10;i++){if(Math.random()<.6){const t2=Math.floor(Math.random()*FOBJ.length);qs.push({ty:'find',ans:t2,opts:shuffle([t2,...shuffle(FOBJ.map((_,k)=>k).filter(k=>k!==t2)).slice(0,3)])})}else{const a=1+Math.floor(Math.random()*9),b=1+Math.floor(Math.random()*9);const s=new Set([a+b]);while(s.size<4){const v=a+b+Math.floor(Math.random()*7)-3;if(v>0)s.add(v)}qs.push({ty:'sum',a,b,ans:a+b,opts:shuffle([...s])})}}return{qs,i:0,sc:[0,0],lock:false}}
+NA.family={build(){if(!FM)FM=fmNew();const p=pane();p.innerHTML='';const pl=FM.i%2;const names=T('fmP');
+  const sb=el('div','row');[0,1].forEach(k=>{const s=el('span','chip',`${k?'🔴':'🔵'} ${names[k]}: ${FM.sc[k]}`);s.setAttribute('aria-pressed',String(k===pl));s.style.background=k===pl?(k?'#e03131':'#1c7ed6'):'';s.style.color=k===pl?'#fff':'';sb.appendChild(s)});p.appendChild(sb);
+  if(FM.i>=10){const w=FM.sc[0]===FM.sc[1]?T('fmTie'):T('fmWin',names[FM.sc[0]>FM.sc[1]?0:1]);p.appendChild(el('p','big',w));const r=el('div','row');const b=el('button','candy',T('again'));b.onclick=()=>{FM=fmNew();NA.family.build()};r.appendChild(b);p.appendChild(r);fanfare();return}
+  const q=FM.qs[FM.i];p.appendChild(el('p','q',(pl?'🔴 ':'🔵 ')+T('fmTurn',names[pl])));p.appendChild(el('p','q',q.ty==='find'?T('fmFind',tx(FOBJ[q.ans][1])):T('fmSum',q.a,q.b)));const msg=el('p','msg');const g=el('div','answers');
+  q.opts.forEach(v=>{const b=optBtn(q.ty==='find'?`<span class="big-e" style="font-size:46px">${FOBJ[v][0]}</span>`:'',pl?'#ffe3e3':'#d0ebff',b=>{if(FM.lock)return;FM.lock=true;if(v===q.ans){FM.sc[pl]++;b.classList.add('ok');celebrate();msg.textContent=praise();msg.className='msg good'}else{shake(b);sfx(false);msg.textContent=T('wrong');msg.className='msg bad'}
+    setTimeout(()=>{FM.lock=false;FM.i++;if(mode==='family')NA.family.build()},1100)});if(q.ty==='sum'){b.classList.add('txt');b.textContent=String(v)}g.appendChild(b)});p.append(g,msg)},
+ draw(t){zoneBg(ZONES[1],t);const pl=FM?FM.i%2:0;yassine(W/2-Math.min(250,W*.22),930,Math.min(.9,W/780),t,{shirt:'#1c7ed6',jump:pl===0?20*bounce(t):0});yassine(W/2+Math.min(250,W*.22),930,Math.min(.9,W/780),t+.4,{shirt:'#e03131',jump:pl===1?20*bounce(t):0});
+  if(FM&&FM.i<10&&FM.qs[FM.i].ty==='sum')label(`${FM.qs[FM.i].a} + ${FM.qs[FM.i].b} = ?`,W/2,330,Math.min(130,W*.12),'#fff','#f59f00','Cairo');else najma(W/2,330,.9,t)}};
+
+/* ---------- MUSIC STUDIO ---------- */
+addUI({muTabs:[['اعزف','تعلّم أغنية','طبول'],['Joue','Apprends une chanson','Percussions'],['Play','Learn a song','Drums'],['Toca','Aprende una canción','Tambores']],muNotes:[['دو','ري','مي','فا','صول','لا','سي','دو'],['do','ré','mi','fa','sol','la','si','do'],['C','D','E','F','G','A','B','C'],['do','re','mi','fa','sol','la','si','do']],
+ muRec:['⏺ سجّل','⏺ Enregistrer','⏺ Record','⏺ Grabar'],muStop:['⏹ أوقف','⏹ Arrêter','⏹ Stop','⏹ Parar'],muPlay:['▶ استمع لما عزفت','▶ Écouter','▶ Play back','▶ Escuchar'],muFollow:['اضغط على المفتاح الذي يلمع','Touche la touche qui brille','Tap the key that lights up','Toca la tecla que brilla'],
+ muSong:['«تلألأ يا نجيم»','« Ah ! vous dirai-je, maman »','“Twinkle, Twinkle, Little Star”','«Estrellita, ¿dónde estás?»']});
+const KEYS=[60,62,64,65,67,69,71,72],KCOL=['#e03131','#fd7e14','#fcc419','#40c057','#15aabf','#1c7ed6','#7048e8','#e64980'];const SONG=[0,0,4,4,5,5,4,3,3,2,2,1,1,0];
+const MU={tab:0,notes:[],rec:null,recd:null,song:0};
+function playKey(i,silent){audioInit();if(MUS.ctx){const t0=MUS.ctx.currentTime;tone(midi(KEYS[i]),t0,.9,'triangle',.28,MUS.sfx);tone(midi(KEYS[i]+12),t0,.5,'sine',.06,MUS.sfx)}MU.notes.push({t:now(),i});if(MU.rec&&!silent)MU.rec.push({dt:now()-MU.rec.t0,i})}
+function drum(k){audioInit();const ac=MUS.ctx;if(!ac)return;const t0=ac.currentTime;if(k===0){const o=ac.createOscillator(),v=ac.createGain();o.frequency.setValueAtTime(150,t0);o.frequency.exponentialRampToValueAtTime(40,t0+.15);v.gain.setValueAtTime(.6,t0);v.gain.exponentialRampToValueAtTime(.001,t0+.3);o.connect(v).connect(MUS.sfx);o.start(t0);o.stop(t0+.3)}
+  else{const s=ac.createBufferSource(),f=ac.createBiquadFilter(),v=ac.createGain();s.buffer=MUS.noise;f.type=k===1?'bandpass':'highpass';f.frequency.value=k===1?1800:7000;v.gain.setValueAtTime(k===1?.5:.25,t0);v.gain.exponentialRampToValueAtTime(.001,t0+(k===1?.2:.08));s.connect(f).connect(v).connect(MUS.sfx);s.start(t0);s.stop(t0+.25);if(k===3)tone(1320,t0,.6,'sine',.15,MUS.sfx)}MU.notes.push({t:now(),i:-1-k})}
+NA.music={build(){const p=pane();p.innerHTML='';p.appendChild(tabsRow(T('muTabs'),MU.tab,i=>{MU.tab=i;MU.song=0;NA.music.build()}));
+  if(MU.tab<2){if(MU.tab===1)p.appendChild(el('p','q',T('muSong')+' — '+T('muFollow')));const k=el('div','keys');KEYS.forEach((_,i)=>{const b=el('button','key');b.style.background=KCOL[i];b.textContent=T('muNotes')[i];if(MU.tab===1&&SONG[MU.song]===i)b.classList.add('glow');
+     b.onpointerdown=e=>{e.preventDefault();playKey(i);if(MU.tab===1){if(SONG[MU.song]===i){MU.song++;if(MU.song>=SONG.length){addStar(3);celebrate();MU.song=0;toast(T('doneGood')+' 🎵')}NA.music.build()}else shake(b)}};k.appendChild(b)});p.appendChild(k);
+    if(MU.tab===0){const r=el('div','row');const rb=el('button','candy alt',MU.rec?T('muStop'):T('muRec'));rb.onclick=()=>{if(MU.rec){MU.recd=MU.rec;MU.rec=null;if(MU.recd.length)addStar()}else MU.rec=Object.assign([],{t0:now()});NA.music.build()};r.appendChild(rb);
+      if(MU.recd&&MU.recd.length){const pb=el('button','candy',T('muPlay'));pb.onclick=()=>MU.recd.forEach(n=>setTimeout(()=>playKey(n.i,true),n.dt*1000));r.appendChild(pb)}p.appendChild(r)}}
+  else{const g=el('div','answers');['🥁','🪘','🔔','✨'].forEach((e,k)=>{const b=optBtn(`<span class="big-e" style="font-size:56px">${e}</span>`,['#ffe3e3','#fff3bf','#d3f9d8','#d0ebff'][k],()=>drum(k));b.onpointerdown=e2=>{e2.preventDefault();drum(k)};b.onclick=null;g.appendChild(b)});p.appendChild(g)}},
+ draw(t){vgrad(0,H,[[0,'#5f3dc4'],[1,'#e599f7']]);for(let i=0;i<30;i++){const a=P[i];circ(a[0]*W,a[1]*500,2+a[2]*2,'#fff',.4+.4*Math.sin(t*2+i))}
+  MU.notes=MU.notes.filter(n=>t-n.t<2);MU.notes.forEach((n,k)=>{const age=t-n.t;const x=W/2+(n.i>=0?(n.i-3.5)*Math.min(110,W*.1):(n.i+2.5)*120),y=650-age*260;c.globalAlpha=1-age/2;emoji(n.i>=0?'🎵':'💥',x,y,70);c.globalAlpha=1});
+  const on=MU.notes.length>0;yassine(W/2,930,Math.min(1,W/700),t,{jump:on?30*bounce(t*1.5):0,armA:on?-PI/2+.3*Math.sin(t*8):undefined,armB:on?-PI/2-.3*Math.sin(t*8):undefined});najma(W/2+Math.min(260,W*.24),320,.7,t)}};
+
+/* ---------- STORY: Yassine and the fallen star ---------- */
+addUI({stTitle:['ياسين والنجمة اللي طاحت','Yassine et l’étoile tombée','Yassine and the Fallen Star','Yassine y la estrella caída'],stQ:['أسئلة القصة','Questions sur l’histoire','Story questions','Preguntas del cuento'],stEnd:['النهاية','Fin','The end','Fin']});
+const STORY={
+ p1:{sc:'night',t:L4('في ليلة هادئة، كان ياسين ينظر إلى السماء من نافذته.','Par une nuit calme, Yassine regardait le ciel depuis sa fenêtre.','One quiet night, Yassine was looking at the sky from his window.','Una noche tranquila, Yassine miraba el cielo desde su ventana.'),next:'p2'},
+ p2:{sc:'fall',t:L4('فجأة، رأى نجمة صغيرة تسقط بعيدًا، خلف الغابة!','Soudain, il vit une petite étoile tomber au loin, derrière la forêt !','Suddenly, he saw a little star falling far away, behind the forest!','De repente, vio una estrellita caer a lo lejos, detrás del bosque.'),next:'p3'},
+ p3:{sc:'go',t:L4('لبس ياسين حذاءه، وأخذ مصباحه، وخرج يبحث عنها.','Yassine mit ses chaussures, prit sa lampe et partit la chercher.','Yassine put on his shoes, took his torch and went to look for it.','Yassine se puso los zapatos, cogió su linterna y salió a buscarla.'),next:'p4'},
+ p4:{sc:'fork',t:L4('وصل ياسين إلى طريقين: طريق الغابة، وطريق النهر. أيّ طريق يختار؟','Yassine arriva devant deux chemins : celui de la forêt et celui de la rivière. Lequel choisir ?','Yassine reached two paths: the forest path and the river path. Which one should he take?','Yassine llegó a dos caminos: el del bosque y el del río. ¿Cuál elige?'),choice:[['🌲',L4('طريق الغابة','La forêt','The forest','El bosque'),'p5a'],['🌊',L4('طريق النهر','La rivière','The river','El río'),'p5b']]},
+ p5a:{sc:'owl',t:L4('في الغابة، ساعدته البومة الحكيمة وأضاءت له الطريق بعينيها اللامعتين.','Dans la forêt, la sage chouette l’aida et éclaira le chemin de ses yeux brillants.','In the forest, the wise owl helped him and lit the way with her shining eyes.','En el bosque, la sabia lechuza le ayudó e iluminó el camino con sus ojos brillantes.'),next:'p6'},
+ p5b:{sc:'turtle',t:L4('عند النهر، حملته سلحفاة طيبة على ظهرها إلى الضفة الأخرى.','À la rivière, une gentille tortue le porta sur son dos jusqu’à l’autre rive.','At the river, a kind turtle carried him on her back to the other side.','En el río, una tortuga amable lo llevó en su espalda a la otra orilla.'),next:'p6'},
+ p6:{sc:'found',t:L4('وأخيرًا، وجد النجمة الصغيرة بين الزهور. كانت حزينة لأنها لا تستطيع العودة إلى السماء.','Enfin, il trouva la petite étoile parmi les fleurs. Elle était triste : elle ne pouvait plus remonter au ciel.','At last he found the little star among the flowers. She was sad because she couldn’t go back to the sky.','Por fin encontró la estrellita entre las flores. Estaba triste porque no podía volver al cielo.'),next:'p7'},
+ p7:{sc:'friends',t:L4('قال ياسين: «لا تحزني! سأكون صديقك». وسمّاها «نجمة».','Yassine lui dit : « Ne sois pas triste ! Je serai ton ami. » Et il l’appela « Najma ».','Yassine said: “Don’t be sad! I’ll be your friend.” And he named her “Najma”.','Yassine le dijo: «¡No estés triste! Seré tu amigo». Y la llamó «Najma».'),next:'p8'},
+ p8:{sc:'island',t:L4('ومنذ ذلك اليوم، تضيء نجمة الجزيرة كل ليلة، وتلعب مع ياسين كل يوم.','Depuis ce jour, Najma illumine l’île chaque nuit et joue avec Yassine chaque jour.','Since that day, Najma lights up the island every night and plays with Yassine every day.','Desde ese día, Najma ilumina la isla cada noche y juega con Yassine cada día.'),end:1}};
+const STQ=[{q:L4('ماذا رأى ياسين من النافذة؟','Qu’a vu Yassine depuis la fenêtre ?','What did Yassine see from the window?','¿Qué vio Yassine desde la ventana?'),o:[['🌠',1],['🐱',0],['✈️',0]]},{q:L4('ماذا سمّى ياسين صديقته؟','Comment Yassine a-t-il appelé son amie ?','What did Yassine name his friend?','¿Cómo llamó Yassine a su amiga?'),o:[[L4('نجمة','Najma','Najma','Najma'),1],[L4('قمر','Qamar','Qamar','Qamar'),0],[L4('زهرة','Zahra','Zahra','Zahra'),0]]},{q:L4('ماذا أخذ ياسين معه؟','Qu’a pris Yassine avec lui ?','What did Yassine take with him?','¿Qué se llevó Yassine?'),o:[['🔦',1],['🎈',0],['⚽',0]]}];
+const ST={pg:'p1',t0:0,qi:-1,sc:0};
+NA.stories={build(){const p=pane();p.innerHTML='';
+  if(ST.qi>=0){if(ST.qi>=STQ.length){finish(ST.sc,STQ.length);return}const q=STQ[ST.qi];p.append(el('p','tdesc',T('stQ')),el('p','q',tx(q.q)));const msg=el('p','msg');const g=el('div','answers');let miss=false;
+    shuffle(q.o).forEach(([o,ok])=>{const b=optBtn(typeof o==='string'?`<span class="big-e" style="font-size:46px">${o}</span>`:'','#f3f0ff',b=>{if(ok){b.classList.add('ok');if(!miss){ST.sc++;addStar()}celebrate();msg.textContent=praise();msg.className='msg good';setTimeout(()=>{ST.qi++;if(mode==='stories')NA.stories.build()},1200)}else{miss=true;shake(b);sfx(false)}});if(typeof o!=='string'){b.classList.add('txt');b.textContent=tx(o)}g.appendChild(b)});p.append(g,msg);return}
+  const pg=STORY[ST.pg];p.appendChild(el('p','tdesc','📖 '+T('stTitle')));const tp=el('p','q',tx(pg.t));tp.style.lineHeight='1.8';p.appendChild(tp);const r=el('div','row');
+  const ls=el('button','candy alt','🔊 '+T('listen'));ls.onclick=()=>speak(tx(pg.t));r.appendChild(ls);
+  if(pg.choice)pg.choice.forEach(([e,n,to])=>{const b=el('button','candy',e+' '+tx(n));b.onclick=()=>{ST.pg=to;ST.t0=now();sfx(true);NA.stories.build();speak(tx(STORY[to].t),true)};r.appendChild(b)});
+  else if(pg.end){const b=el('button','candy',T('stEnd')+' → '+T('stQ'));b.onclick=()=>{addStar(2);ST.qi=0;ST.sc=0;NA.stories.build()};r.appendChild(b)}
+  else{const b=el('button','candy',T('next')+' →');b.onclick=()=>{ST.pg=pg.next;ST.t0=now();NA.stories.build();speak(tx(STORY[pg.next].t),true)};r.appendChild(b)}p.appendChild(r)},
+ draw(t){const sc=ST.qi>=0?'island':STORY[ST.pg].sc;const k=ease((t-ST.t0)/.8);const night=['night','fall','go','fork','owl','turtle','found','friends'].includes(sc);
+  if(night){vgrad(0,H,[[0,'#0b1d51'],[1,'#3b5bdb']]);for(let i=0;i<60;i++){const a=P[i];circ(a[0]*W,a[1]*600,1.5+a[2]*2.5,'#fff',.4+.5*Math.sin(t*2+i))}circ(W*.12,140,50,'#fff3bf');circ(W*.12+22,125,46,'#0b1d51')}else{vgrad(0,H,[[0,'#3bc9db'],[1,'#ffe8a3']]);sun(W*.8,170,60,t)}
+  if(sc==='night'){rr(W/2-260,200,520,420,20);c.fillStyle='#ffd8a8';c.fill();c.fillStyle='#0b1d51';c.fillRect(W/2-220,240,440,340);c.strokeStyle='#8b5a2b';c.lineWidth=16;c.strokeRect(W/2-220,240,440,340);c.beginPath();c.moveTo(W/2,240);c.lineTo(W/2,580);c.stroke();yassine(W/2,930,1,t,{wave:.05})}
+  else if(sc==='fall'){const f=((t-ST.t0)*.5)%1;const x=W*.8-f*W*.5,y=120+f*420;c.beginPath();c.moveTo(x,y);c.lineTo(x+200,y-160);c.lineWidth=10;c.strokeStyle='rgba(255,236,153,.6)';c.lineCap='round';c.stroke();najma(x,y,.5,t);for(let i=0;i<5;i++)tree(i*W/4,900,.8,'#1b4332','#2d6a4f');yassine(W*.2,960,.8,t,{mood:'surprised',wave:.05})}
+  else if(sc==='go'){hill(800,30,1,0,'#2d6a4f');yassine(W*.3+k*W*.3,930,1,t,{item:null,armA:-.2});emoji('🔦',W*.3+k*W*.3+90,720,70)}
+  else if(sc==='fork'){hill(800,30,1,0,'#2d6a4f');for(let i=0;i<4;i++)tree(W*.08+i*90,760,.6,'#1b4332','#2d6a4f');c.fillStyle='#4dabf7';c.fillRect(W*.62,700,W*.38,120);emoji('🌲',W*.2,480,110);emoji('🌊',W*.8,480,110);yassine(W/2,930,1,t,{mood:'surprised',wave:.05})}
+  else if(sc==='owl'){for(let i=0;i<6;i++)tree(i*W/5,900,.9,'#1b4332','#2d6a4f');emoji('🦉',W*.7,380,150);circ(W*.7-22,370,60,'#fff3bf',.15+.1*Math.sin(t*4));yassine(W*.35,930,1,t,{})}
+  else if(sc==='turtle'){c.fillStyle='#1c7ed6';c.fillRect(0,640,W,360);for(let r2=0;r2<4;r2++){c.beginPath();for(let x=0;x<=W;x+=20)c.lineTo(x,680+r2*60+8*Math.sin(x/50+t*2));c.strokeStyle='rgba(255,255,255,.4)';c.lineWidth=4;c.stroke()}emoji('🐢',W*.3+k*W*.35,760,220);yassine(W*.3+k*W*.35,700,.7,t,{})}
+  else if(sc==='found'){hill(800,30,1,0,'#2d6a4f');for(let i=0;i<10;i++)emoji(['🌸','🌼','🌷'][i%3],W*.3+i*W*.05,850+(i%2)*20,50);najma(W*.62,720,.9,t);yassine(W*.3,930,1,t,{wave:.05})}
+  else if(sc==='friends'){hill(800,30,1,0,'#2d6a4f');yassine(W*.4,930,1,t,{mood:'happy'});najma(W*.6,560,1,t);emoji('💛',W/2,380+10*Math.sin(t*3),90)}
+  else{drawIsland(t)}}};
+
+/* ---------- LAB ---------- */
+addUI({lbTabs:[['خلط الألوان','يطفو أم يغرق؟','المغناطيس'],['Mélange des couleurs','Flotte ou coule ?','L’aimant'],['Mixing colors','Float or sink?','The magnet'],['Mezclar colores','¿Flota o se hunde?','El imán']],
+ lbPick:['اختر لونين واخلطهما','Choisis deux couleurs à mélanger','Pick two colors to mix','Elige dos colores para mezclar'],lbFloat:['يطفو 🛟','Flotte 🛟','Floats 🛟','Flota 🛟'],lbSink:['يغرق ⬇️','Coule ⬇️','Sinks ⬇️','Se hunde ⬇️'],
+ lbYes:['يجذبه 🧲','Il l’attire 🧲','It sticks 🧲','Lo atrae 🧲'],lbNo:['لا يجذبه','Il ne l’attire pas','It doesn’t stick','No lo atrae'],lbQF:['هل يطفو أم يغرق؟','Il flotte ou il coule ?','Does it float or sink?','¿Flota o se hunde?'],lbQM:['هل يجذبه المغناطيس؟','L’aimant l’attire-t-il ?','Will the magnet pick it up?','¿Lo atrae el imán?'],
+ lbHome:['جرّبها في البيت مع الكبار!','Essaie à la maison avec un adulte !','Try it at home with a grown-up!','¡Pruébalo en casa con un adulto!'],
+ cols:[['أحمر','أصفر','أزرق','برتقالي','أخضر','بنفسجي'],['rouge','jaune','bleu','orange','vert','violet'],['red','yellow','blue','orange','green','purple'],['rojo','amarillo','azul','naranja','verde','morado']]});
+const LB={tab:0,sel:[],res:null,t0:0,q:null};const PCOL=['#e03131','#fcc419','#1c7ed6','#fd7e14','#40c057','#845ef7'];
+const FLOAT=[['🪵',1],['🪨',0],['🍎',1],['🔑',0],['🦆',1],['🪙',0],['🍃',1],['⚓',0]],MAG=[['📎',1],['🔩',1],['✂️',1],['📄',0],['🧸',0],['🍎',0],['🪵',0],['🧷',1]];
+NA.lab={build(){const p=pane();p.innerHTML='';p.appendChild(tabsRow(T('lbTabs'),LB.tab,i=>{LB.tab=i;LB.sel=[];LB.res=null;LB.q=null;NA.lab.build()}));const cn=T('cols');
+  if(LB.tab===0){p.appendChild(el('p','q',LB.res!=null?`${cn[LB.sel[0]]} + ${cn[LB.sel[1]]} = ${cn[LB.res]}`:T('lbPick')));const g=el('div','row');[0,1,2].forEach(i=>{const b=el('button','swatch2');b.style.background=PCOL[i];b.textContent=cn[i];b.onclick=()=>{if(LB.sel.length>=2){LB.sel=[];LB.res=null}LB.sel.push(i);
+      if(LB.sel.length===2){const [a,b2]=LB.sel.slice().sort();LB.res=a===b2?a:a+b2===1?3:a+b2===3?4:5;LB.t0=now();sfx(true);if(LB.res>2)addStar()}NA.lab.build()};g.appendChild(b)});p.append(g,el('p','tdesc','💡 '+T('lbHome')))}
+  else{const set=LB.tab===1?FLOAT:MAG;if(!LB.q)LB.q={o:shuffle(set.map((_,i)=>i)),i:0,ans:null,score:0};const q=LB.q;if(q.i>=set.length){finish(q.score,set.length);return}const it=set[q.o[q.i]];
+    const d=el('div','dots');dots(d,set.length,q.i);p.append(d,el('p','q',it[0]+'  '+(LB.tab===1?T('lbQF'):T('lbQM'))));const msg=el('p','msg');const g=el('div','answers two');
+    [[1,LB.tab===1?T('lbFloat'):T('lbYes')],[0,LB.tab===1?T('lbSink'):T('lbNo')]].forEach(([v,lab2])=>{const b=el('button','ans txt',lab2);b.style.background=v?'#d0ebff':'#ffe3e3';b.onclick=()=>{if(q.ans!=null)return;q.ans=v;LB.t0=now();if(v===it[1]){q.score++;addStar();celebrate();msg.textContent=praise();msg.className='msg good';b.classList.add('ok')}else{sfx(false);shake(b);msg.textContent=T('wrong');msg.className='msg bad'}
+      setTimeout(()=>{q.i++;q.ans=null;if(mode==='lab')NA.lab.build()},2200)};g.appendChild(b)});p.append(g,msg,el('p','tdesc','💡 '+T('lbHome')))}},
+ draw(t){vgrad(0,H,[[0,'#e3fafc'],[1,'#c5f6fa']]);c.fillStyle='#99e9f2';c.fillRect(0,780,W,H-780);const cx=W/2+Math.min(200,W*.17);const e=t-LB.t0;
+  if(LB.tab===0){[0,1].forEach(k=>{const ci=LB.sel[k];const x=cx+(k?140:-140);rr(x-50,260,100,170,16);c.fillStyle='rgba(255,255,255,.6)';c.fill();if(ci!=null){c.fillStyle=PCOL[ci];c.fillRect(x-44,330,88,94)}});
+    rr(cx-110,470,220,280,30);c.fillStyle='rgba(255,255,255,.7)';c.fill();if(LB.res!=null){const lv=ease(e/1.2);c.fillStyle=PCOL[LB.res];c.fillRect(cx-100,740-250*lv,200,250*lv);for(let i=0;i<5;i++)circ(cx-60+i*30,740-250*lv+20*Math.sin(t*3+i),8,'#fff',.6)}}
+  else{const set=LB.tab===1?FLOAT:MAG;const q=LB.q;if(q&&q.i<set.length){const it=set[q.o[q.i]];
+    if(LB.tab===1){rr(cx-200,360,400,400,20);c.fillStyle='rgba(77,171,247,.55)';c.fill();c.fillStyle='#4dabf7';c.fillRect(cx-200,460,400,300);const y=q.ans!=null?(it[1]?440+6*Math.sin(t*3):Math.min(700,300+e*400)):300+8*Math.sin(t*2);emoji(it[0],cx,y,90)}
+    else{c.save();c.translate(cx,250);c.lineWidth=40;c.strokeStyle='#e03131';c.beginPath();c.arc(0,0,70,0,PI,true);c.stroke();c.fillStyle='#ced4da';c.fillRect(-90,-6,40,40);c.fillRect(50,-6,40,40);c.restore();
+      const y=q.ans!=null&&it[1]?Math.max(330,640-e*500):640+(q.ans!=null&&!it[1]?4*Math.sin(t*20):0);emoji(it[0],cx,y,90)}}}
+  yassine(W/2-Math.min(220,W*.19),930,Math.min(1,W/700),t,{jump:jumpOf(t)});najma(W-Math.min(120,W*.1),150,.55,t)}};
+
+/* ---------- GARDEN ---------- */
+addUI({gdTools:[['🌱 ازرع','💧 اسقِ','🧺 اقطف'],['🌱 Planter','💧 Arroser','🧺 Récolter'],['🌱 Plant','💧 Water','🧺 Pick'],['🌱 Plantar','💧 Regar','🧺 Cosechar']],gdHint:['اختر أداة ثم اضغط على قطعة الأرض','Choisis un outil puis touche la terre','Pick a tool, then tap a patch of soil','Elige una herramienta y toca la tierra'],
+ gdWait:['النبتة شربت، انتظر قليلًا حتى تعطش 🌤️','La plante a bu, attends un peu 🌤️','The plant has had a drink, wait a little 🌤️','La planta ya bebió, espera un poco 🌤️'],gdHarvest:['قطفت ثمرة جميلة!','Belle récolte !','What a lovely harvest!','¡Qué buena cosecha!'],gdNotReady:['لم تنضج بعد، اسقها','Pas encore mûr, arrose-la','Not ready yet, water it','Aún no está lista, riégala']});
+const SEEDS=['🌻','🍅','🥕','🌷','🍓','🌽'];let GD={tool:0,seed:0,plots:Array.from({length:6},()=>({s:null,st:0,w:0})),fx:[]};try{const g=JSON.parse(localStorage.getItem('yas_gd')||'null');if(g&&g.length===6)GD.plots=g}catch(e){}
+function gdSave(){try{localStorage.setItem('yas_gd',JSON.stringify(GD.plots))}catch(e){}}
+function gdRects(){const cols=3,pw=Math.min(240,(W-120)/3),ph=150,gap=24;const x0=W/2-(cols*pw+(cols-1)*gap)/2;return GD.plots.map((_,i)=>({x:x0+(i%3)*(pw+gap),y:440+Math.floor(i/3)*(ph+70),w:pw,h:ph}))}
+NA.garden={build(){const p=pane();p.innerHTML='';p.appendChild(tabsRow(T('gdTools'),GD.tool,i=>{GD.tool=i;NA.garden.build()}));if(GD.tool===0){const r=el('div','row');SEEDS.forEach((s,i)=>{const b=el('button','ichip'+(i===GD.seed?' sel':''),s);b.onclick=()=>{GD.seed=i;NA.garden.build()};r.appendChild(b)});p.appendChild(r)}p.appendChild(el('p','tdesc',T('gdHint')));const m=el('p','msg');m.id='gdMsg';p.appendChild(m)},
+ down(pt){const rs=gdRects();const i=rs.findIndex(r=>pt.x>r.x&&pt.x<r.x+r.w&&pt.y>r.y-90&&pt.y<r.y+r.h);if(i<0)return;const pl=GD.plots[i],m=$('gdMsg');const nowt=Date.now();
+  if(GD.tool===0){if(!pl.s){pl.s=SEEDS[GD.seed];pl.st=0;pl.w=0;sfx(true);GD.fx.push({t:now(),i,e:'🌱'})}}
+  else if(GD.tool===1){if(!pl.s)return;if(pl.st>=4){m.textContent=T('gdNotReady');return}if(nowt-pl.w<20000){m.textContent=T('gdWait');m.className='msg';sfx(false);return}pl.st++;pl.w=nowt;sfx(true);GD.fx.push({t:now(),i,e:'💧'});m.textContent=''}
+  else{if(!pl.s)return;if(pl.st<4){m.textContent=T('gdNotReady');m.className='msg bad';sfx(false);return}GD.fx.push({t:now(),i,e:pl.s});pl.s=null;pl.st=0;addStar();celebrate();m.textContent=T('gdHarvest');m.className='msg good'}gdSave()},
+ draw(t){vgrad(0,H,[[0,'#a5d8ff'],[1,'#d3f9d8']]);sun(W*.85,140,55,t);hill(380,20,1,0,'#8ce99a');c.fillStyle='#69db7c';c.fillRect(0,400,W,H-400);const rs=gdRects();const nowt=Date.now();
+  rs.forEach((r,i)=>{const pl=GD.plots[i];rr(r.x,r.y,r.w,r.h,20);c.fillStyle='#8b5a2b';c.fill();for(let k=0;k<4;k++){c.beginPath();c.moveTo(r.x+14,r.y+30+k*30);c.lineTo(r.x+r.w-14,r.y+30+k*30);c.strokeStyle='rgba(0,0,0,.15)';c.lineWidth=4;c.stroke()}
+    if(pl.s){const cx=r.x+r.w/2,cy=r.y+r.h*.45;const sw=Math.sin(t*2+i)*.05;c.save();c.translate(cx,cy);c.rotate(sw);
+      if(pl.st===0){circ(0,10,18,'#5c3c1c')}else if(pl.st===1)emoji('🌱',0,-10,60);else if(pl.st===2)emoji('🌿',0,-20,80);else if(pl.st===3){emoji('🌿',0,-10,80);emoji(pl.s,0,-60,34)}else{emoji('🌿',0,0,70);emoji(pl.s,0,-55,80)}c.restore();
+      if(pl.st<4&&nowt-pl.w>=20000)emoji('💧',r.x+r.w-22,r.y-10+6*Math.sin(t*4),34)}});
+  GD.fx=GD.fx.filter(f=>t-f.t<1.2);GD.fx.forEach(f=>{const r=rs[f.i];const a=t-f.t;c.globalAlpha=1-a/1.2;emoji(f.e,r.x+r.w/2,r.y-a*120,60);c.globalAlpha=1});
+  yassine(Math.min(120,W*.1),330,.45,t,{});najma(W-Math.min(220,W*.2),300,.5,t)}};
+
+/* ---------- PET (Mishmish the cat) ---------- */
+addUI({ptName:['مشمش','Michmich','Mishmish','Mishmish'],ptActs:[['🐟 أطعمه','🛁 حمّمه','💤 نوّمه','🧶 العب معه'],['🐟 Nourrir','🛁 Laver','💤 Dormir','🧶 Jouer'],['🐟 Feed','🛁 Wash','💤 Sleep','🧶 Play'],['🐟 Comer','🛁 Bañar','💤 Dormir','🧶 Jugar']],
+ ptStats:[['جوع','نظافة','نشاط','لعب'],['Faim','Propreté','Énergie','Jeu'],['Food','Clean','Energy','Fun'],['Comida','Limpieza','Energía','Juego']],ptHappy:['مشمش سعيد! 😺','Michmich est content ! 😺','Mishmish is happy! 😺','¡Mishmish está feliz! 😺'],ptSad:['مشمش يحتاجك 😿','Michmich a besoin de toi 😿','Mishmish needs you 😿','Mishmish te necesita 😿'],ptPet:['اضغط على مشمش لتداعبه','Touche Michmich pour le caresser','Tap Mishmish to pet him','Toca a Mishmish para acariciarlo']});
+let PT={v:[70,70,70,70],ts:Date.now(),act:-1,actT:0,rew:{},hearts:[]};try{const s=JSON.parse(localStorage.getItem('yas_pt')||'null');if(s)Object.assign(PT,s)}catch(e){}
+function ptDecay(){const mins=(Date.now()-PT.ts)/60000;if(mins<.2)return;const d=[2,1,1,2];PT.v=PT.v.map((x,i)=>Math.max(5,x-d[i]*mins*.5));PT.ts=Date.now();ptSave()}
+function ptSave(){try{localStorage.setItem('yas_pt',JSON.stringify({v:PT.v,ts:PT.ts,rew:PT.rew}))}catch(e){}}
+NA.pet={build(){ptDecay();const p=pane();p.innerHTML='';const avg=PT.v.reduce((a,b)=>a+b)/4;p.appendChild(el('p','q',avg>=50?T('ptHappy'):T('ptSad')));
+  const st=el('div','stats');T('ptStats').forEach((n,i)=>{const w=el('div','stat');w.appendChild(el('span','',['🐟','🛁','💤','🧶'][i]+' '+n));const m=el('div','meter');const mi=el('i');mi.style.width=Math.round(PT.v[i])+'%';m.appendChild(mi);w.appendChild(m);st.appendChild(w)});p.appendChild(st);
+  const g=el('div','answers');T('ptActs').forEach((n,i)=>{const b=el('button','ans txt',n);b.style.background=['#fff4e6','#e7f5ff','#f3f0ff','#ebfbee'][i];b.onclick=()=>{PT.v[i]=Math.min(100,PT.v[i]+35);PT.act=i;PT.actT=now();sfx(true);const k=Date.now();if(!PT.rew[i]||k-PT.rew[i]>600000){PT.rew[i]=k;addStar()}ptSave();NA.pet.build()};g.appendChild(b)});p.append(g,el('p','tdesc',T('ptPet')))},
+ down(pt){if(Math.hypot(pt.x-W/2,pt.y-620)<220){PT.hearts.push({t:now(),x:pt.x});PT.v[3]=Math.min(100,PT.v[3]+3);if(MUS.ctx){const t0=MUS.ctx.currentTime;tone(110,t0,.5,'sine',.2,MUS.sfx);tone(130,t0+.2,.5,'sine',.15,MUS.sfx)}}},
+ draw(t){vgrad(0,H,[[0,'#fff3d6'],[1,'#ffe8cc']]);c.fillStyle='#d9a066';c.fillRect(0,800,W,H-800);c.beginPath();c.ellipse(W/2,840,Math.min(380,W*.35),60,0,0,2*PI);c.fillStyle='#ffa8a8';c.fill();
+  const avg=PT.v.reduce((a,b)=>a+b)/4,sleep=PT.act===2&&t-PT.actT<4,acting=t-PT.actT<2.5;const cx=W/2,cy=640,s=Math.min(1.1,W/650);c.save();c.translate(cx,cy);c.scale(s,s);
+  const wag=Math.sin(t*(avg>50?6:2))*.4;c.save();c.translate(110,40);c.rotate(-.8+wag);c.beginPath();c.moveTo(0,0);c.quadraticCurveTo(60,-60,40,-140);c.lineWidth=26;c.strokeStyle='#f59f00';c.lineCap='round';c.stroke();c.restore();
+  c.beginPath();c.ellipse(0,60,130,95,0,0,2*PI);c.fillStyle='#ffa94d';c.fill();c.beginPath();c.ellipse(0,90,70,50,0,0,2*PI);c.fillStyle='#ffe8cc';c.fill();
+  const hy=-60+(sleep?20:0);[-1,1].forEach(sx=>{c.beginPath();c.moveTo(sx*40,hy-70);c.lineTo(sx*90,hy-130);c.lineTo(sx*100,hy-40);c.closePath();c.fillStyle='#ffa94d';c.fill();c.beginPath();c.moveTo(sx*55,hy-75);c.lineTo(sx*85,hy-112);c.lineTo(sx*90,hy-55);c.closePath();c.fillStyle='#ffc9c9';c.fill()});
+  circ(0,hy,110,'#ffa94d');[-1,1].forEach(sx=>{if(sleep||avg<30&&Math.sin(t)>0){c.beginPath();c.arc(sx*40,hy-10,18,.1*PI,.9*PI);c.lineWidth=6;c.strokeStyle='#5c3c1c';c.stroke()}else{c.beginPath();c.ellipse(sx*40,hy-10,20,26,0,0,2*PI);c.fillStyle='#fff';c.fill();circ(sx*40+3,hy-6,13,'#2b8a3e');circ(sx*40+3,hy-6,6,'#111');circ(sx*40+8,hy-14,4,'#fff')}
+   c.beginPath();c.moveTo(sx*60,hy+30);c.lineTo(sx*140,hy+20);c.moveTo(sx*60,hy+40);c.lineTo(sx*140,hy+48);c.lineWidth=3;c.strokeStyle='#5c3c1c';c.stroke()});
+  c.beginPath();c.moveTo(-10,hy+18);c.lineTo(10,hy+18);c.lineTo(0,hy+30);c.closePath();c.fillStyle='#e64980';c.fill();c.beginPath();if(avg>=50){c.arc(-12,hy+34,12,0,PI);c.moveTo(24,hy+34);c.arc(12,hy+34,12,0,PI)}else c.arc(0,hy+55,16,1.15*PI,1.85*PI);c.lineWidth=4;c.strokeStyle='#5c3c1c';c.stroke();c.restore();
+  if(sleep)['z','Z','z'].forEach((z,i)=>label(z,cx+120+i*40,cy-200-i*40-((t*30)%40),40+i*10,'#fff','#5f3dc4','Cairo'));
+  if(acting&&PT.act===0)emoji('🐟',cx-170,cy+60,70);if(acting&&PT.act===1)for(let i=0;i<8;i++)circ(cx+(P[i][0]-.5)*300,cy-100-((t*80+i*40)%200),10+P[i][1]*12,'#a5d8ff',.7);if(acting&&PT.act===3)emoji('🧶',cx+180+40*Math.sin(t*6),cy+120,70);
+  PT.hearts=PT.hearts.filter(h=>t-h.t<1.5);PT.hearts.forEach(h=>{const a=t-h.t;c.globalAlpha=1-a/1.5;emoji('💗',h.x,cy-150-a*120,50);c.globalAlpha=1});label(T('ptName'),cx,180,Math.min(80,W*.09),'#fff','#f08c00')}};
+
+/* ---------- PUZZLE ---------- */
+addUI({pzPics:[['الجزيرة','الشاطئ','ياسين ونجمة','الجبل','📷 صورتي'],['L’île','La plage','Yassine et Najma','La montagne','📷 Ma photo'],['Island','Beach','Yassine & Najma','Mountain','📷 My photo'],['La isla','La playa','Yassine y Najma','La montaña','📷 Mi foto']],
+ pzHint:['اضغط على قطعتين لتبديل مكانهما','Touche deux pièces pour les échanger','Tap two pieces to swap them','Toca dos piezas para cambiarlas'],pzWin:['ركّبت الصورة! 🧩','Puzzle terminé ! 🧩','Puzzle done! 🧩','¡Rompecabezas terminado! 🧩']});
+const PZ={pic:0,n:3,perm:[],sel:-1,img:null,done:false,user:null};
+function pzImage(){const S=900;const cvs=document.createElement('canvas');cvs.width=cvs.height=S;const x=cvs.getContext('2d');
+  if(PZ.pic===4&&PZ.user){const im=PZ.user,s=Math.max(S/im.width,S/im.height);x.drawImage(im,(S-im.width*s)/2,(S-im.height*s)/2,im.width*s,im.height*s)}
+  else drawTo(x,()=>{const W0=W,H0=H;x.scale(S/1000,S/1000);W=1000;H=1000;const t=1.3;if(PZ.pic===0||PZ.pic===4)drawIsland(t);else if(PZ.pic===1){zoneBg(ZONES[1],t);yassine(380,930,1,t,{})}else if(PZ.pic===2){vgrad(0,H,[[0,'#0b1d51'],[1,'#3b5bdb']]);for(let i=0;i<40;i++)circ(P[i][0]*W,P[i][1]*600,3,'#fff',.7);yassine(380,950,1.4,t,{mood:'happy'});najma(720,380,1.2,t)}else{zoneBg(ZONES[3],t);najma(700,350,1,t)}W=W0;H=H0});
+  PZ.img=cvs}
+function pzNew(){pzImage();const N=PZ.n*PZ.n;do{PZ.perm=shuffle([...Array(N).keys()])}while(PZ.perm.every((v,i)=>v===i));PZ.sel=-1;PZ.done=false}
+function pzRect(){const S=Math.min(H-260,W-80,640);return{x:W/2-S/2,y:120,S}}
+NA.puzzle={build(){if(!PZ.img)pzNew();const p=pane();p.innerHTML='';const r=el('div','row');T('pzPics').forEach((n,i)=>{const b=el('button','chip',n);b.setAttribute('aria-pressed',String(PZ.pic===i));b.onclick=()=>{if(i===4){$('pzFile').click();return}PZ.pic=i;pzNew();NA.puzzle.build()};r.appendChild(b)});p.appendChild(r);
+  const r2=el('div','row');[2,3,4].forEach(n=>{const b=el('button','chip',`${n}×${n}`);b.setAttribute('aria-pressed',String(PZ.n===n));b.onclick=()=>{PZ.n=n;pzNew();NA.puzzle.build()};r2.appendChild(b)});p.append(r2,el('p','tdesc',PZ.done?T('pzWin'):T('pzHint')))},
+ down(pt){if(PZ.done)return;const R=pzRect(),n=PZ.n,cs=R.S/n;const cx=Math.floor((pt.x-R.x)/cs),cy=Math.floor((pt.y-R.y)/cs);if(cx<0||cy<0||cx>=n||cy>=n)return;const k=cy*n+cx;
+  if(PZ.sel<0){PZ.sel=k;sfx(true)}else{[PZ.perm[PZ.sel],PZ.perm[k]]=[PZ.perm[k],PZ.perm[PZ.sel]];PZ.sel=-1;if(MUS.ctx)tone(700,MUS.ctx.currentTime,.1,'triangle',.15,MUS.sfx);if(PZ.perm.every((v,i)=>v===i)){PZ.done=true;addStar(PZ.n);celebrate();fanfare();NA.puzzle.build()}}},
+ draw(t){vgrad(0,H,[[0,'#d0bfff'],[1,'#fff0f6']]);const R=pzRect(),n=PZ.n,cs=R.S/n,src=900/n;if(!PZ.img)return;rr(R.x-12,R.y-12,R.S+24,R.S+24,18);c.fillStyle='#fff';c.fill();
+  for(let k=0;k<n*n;k++){const v=PZ.perm[k];const dx=R.x+(k%n)*cs,dy=R.y+Math.floor(k/n)*cs;c.drawImage(PZ.img,(v%n)*src,Math.floor(v/n)*src,src,src,dx,dy,cs,cs);if(!PZ.done){c.strokeStyle='#fff';c.lineWidth=3;c.strokeRect(dx,dy,cs,cs)}if(k===PZ.sel){c.strokeStyle='#ffd43b';c.lineWidth=10;c.strokeRect(dx+5,dy+5,cs-10,cs-10)}}
+  najma(Math.min(W-90,R.x+R.S+110),R.y+R.S*.3,.5,t);if(W>900)yassine(R.x-140,930,.8,t,{jump:jumpOf(t)})}};
+$('pzFile').onchange=e=>{const f=e.target.files[0];e.target.value='';if(!f)return;const im=new Image();im.onload=()=>{PZ.user=im;PZ.pic=4;pzNew();if(mode==='puzzle')NA.puzzle.build()};im.src=URL.createObjectURL(f)};
+
+/* ---------- FILM STUDIO ---------- */
+addUI({flBg:[['الجزيرة','الشاطئ','الغابة','الجبل','الوادي'],['L’île','La plage','La forêt','La montagne','La vallée'],['Island','Beach','Forest','Mountain','Valley'],['Isla','Playa','Bosque','Montaña','Valle']],flHint:['أضف شخصيات، اسحبها بإصبعك، ثم سجّل فيلمك (15 ثانية) وتكلّم!','Ajoute des personnages, déplace-les avec ton doigt, puis enregistre ton film (15 s) et parle !','Add characters, drag them with your finger, then record your film (15 s) and talk!','Añade personajes, muévelos con el dedo y graba tu película (15 s) ¡hablando!'],
+ flRec:['⏺ سجّل','⏺ Tourner','⏺ Record','⏺ Grabar'],flStop:['⏹ أوقف','⏹ Stop','⏹ Stop','⏹ Parar'],flPlay:['▶ شاهد فيلمي','▶ Voir mon film','▶ Watch my film','▶ Ver mi película'],flClear:['مسح الكل','Tout effacer','Clear all','Borrar todo']});
+const FL2={bg:1,actors:[],drag:null,rec:null,film:null,play:null,audio:new Audio()};
+const ACT=['Y','N','🐱','🐶','🦁','🐸','🚗','🎈'];
+function flAdd(k){FL2.actors.push({k,x:W*(.25+Math.random()*.5),y:k==='Y'?900:k==='N'?400:700})}
+function flSnap(){return FL2.actors.map(a=>[a.x,a.y])}
+NA.film={build(){const p=pane();p.innerHTML='';p.appendChild(tabsRow(T('flBg'),FL2.bg,i=>{FL2.bg=i;NA.film.build()}));const r=el('div','row');ACT.forEach(k=>{const b=el('button','ichip',k==='Y'?'🧢':k==='N'?'⭐':k);b.onclick=()=>{if(FL2.actors.length<8){flAdd(k);sfx(true)}};r.appendChild(b)});p.appendChild(r);
+  const r2=el('div','row');const rb=el('button','candy'+(FL2.rec?'':' alt'),FL2.rec?T('flStop'):T('flRec'));rb.onclick=()=>FL2.rec?flStop():flStart();r2.appendChild(rb);
+  if(FL2.film){const pb=el('button','candy',T('flPlay'));pb.onclick=flPlay;r2.appendChild(pb)}const cb=el('button','candy alt',T('flClear'));cb.onclick=()=>{FL2.actors=[];FL2.film=null;NA.film.build()};r2.appendChild(cb);p.append(r2,el('p','tdesc',T('flHint')))},
+ down(pt){if(FL2.play)return;for(let i=FL2.actors.length-1;i>=0;i--){const a=FL2.actors[i];if(Math.hypot(pt.x-a.x,pt.y-(a.k==='Y'?a.y-200:a.y))<130){FL2.drag={i,dx:a.x-pt.x,dy:a.y-pt.y};return}}},
+ move(pt){if(!FL2.drag)return;const a=FL2.actors[FL2.drag.i];a.x=pt.x+FL2.drag.dx;a.y=pt.y+FL2.drag.dy},up(){FL2.drag=null},
+ draw(t){const bg=FL2.bg;if(bg===0)drawIsland(t);else zoneBg(ZONES[bg],t);
+  if(FL2.rec){const e=now()-FL2.rec.t0;FL2.rec.frames.push({dt:e,p:flSnap()});if(e>=15)flStop();label('⏺ '+Math.ceil(15-e),W-120,90,50,'#fff','#e03131','Cairo')}
+  let pos=null;if(FL2.play){const e=now()-FL2.play.t0;const fr=FL2.film.frames;let f=fr.find(x=>x.dt>=e)||fr[fr.length-1];pos=f.p;if(e>FL2.film.dur+.3){FL2.play=null;FL2.audio.pause()}}
+  FL2.actors.forEach((a,i)=>{const x=pos&&pos[i]?pos[i][0]:a.x,y=pos&&pos[i]?pos[i][1]:a.y;if(a.k==='Y')yassine(x,y,.75,t,{});else if(a.k==='N')najma(x,y,.7,t);else emoji(a.k,x,y+6*Math.sin(t*3+i),120)})}};
+async function flStart(){FL2.rec={t0:now(),frames:[],chunks:[],mr:null};try{const st=await navigator.mediaDevices.getUserMedia({audio:true});const mr=new MediaRecorder(st);FL2.rec.mr=mr;FL2.rec.st=st;mr.ondataavailable=e=>{if(e.data.size&&FL2.rec)FL2.rec.chunks.push(e.data)};mr.start()}catch(e){}FL2.rec.t0=now();NA.film.build()}
+function flStop(){const r=FL2.rec;if(!r)return;FL2.rec=null;const dur=r.frames.length?r.frames[r.frames.length-1].dt:0;FL2.film={frames:r.frames,dur,audio:null};
+  if(r.mr){r.mr.onstop=()=>{r.st.getTracks().forEach(x=>x.stop());if(r.chunks.length)FL2.film.audio=URL.createObjectURL(new Blob(r.chunks,{type:r.mr.mimeType||'audio/webm'}))};r.mr.stop()}if(dur>2)addStar(2);sfx(true);if(mode==='film')NA.film.build()}
+function flPlay(){if(!FL2.film||!FL2.film.frames.length)return;FL2.play={t0:now()};if(FL2.film.audio){FL2.audio.src=FL2.film.audio;FL2.audio.play().catch(()=>{})}}
+
+/* mark all ready */
+Object.values(APPS).forEach(a=>a.ready=1);
+const GUIDE2_ADD=()=>GUIDE.splice(GUIDE.length-1,1,
+ {e:'🌟',t:L4('مهمة نجمة اليومية','La mission de Najma','Najma’s daily mission','La misión diaria de Najma'),d:L4('كل يوم تختار نجمة 3 ألعاب. اربح نجمة في كل واحدة لتحصل على 5 نجوم إضافية.','Chaque jour, Najma choisit 3 jeux. Gagne une étoile dans chacun pour 5 étoiles bonus.','Each day Najma picks 3 games. Win a star in each one for 5 bonus stars.','Cada día Najma elige 3 juegos. Gana una estrella en cada uno y recibe 5 estrellas extra.')},
+ {e:'🏝️',t:L4('كنز الجزيرة','Le trésor de l’île','Island treasure','El tesoro de la isla'),d:L4('اضغط على عدد النجوم في الأعلى. كل 10 نجوم تفتح كنزًا يظهر على الخريطة: مركب، قوس قزح، منارة، قصر…','Touche le compteur d’étoiles en haut. Toutes les 10 étoiles, un trésor apparaît sur la carte : voilier, arc-en-ciel, phare, château…','Tap the star counter at the top. Every 10 stars, a treasure appears on the map: a boat, a rainbow, a lighthouse, a castle…','Toca el contador de estrellas. Cada 10 estrellas aparece un tesoro en el mapa: un velero, un arcoíris, un faro, un castillo…')},
+ {e:'⚙️',t:L4('ركن الآباء','Espace parents','Parents’ corner','Rincón de los padres'),d:L4('محمي بسؤال حساب: حدّد وقت اللعب اليومي، أضف 15 دقيقة، شاهد تقرير النجوم لكل لعبة، أو صفّر التقدّم. عند انتهاء الوقت تظهر «وقت الراحة!».','Protégé par un calcul : temps de jeu par jour, +15 min, rapport d’étoiles par jeu, remise à zéro. Quand le temps est fini, l’écran « Pause » s’affiche.','Protected by a sum: set daily play time, add 15 min, see stars per game, or reset. When time is up, “Break time” appears.','Protegido con una cuenta: tiempo de juego diario, +15 min, informe de estrellas por juego o reinicio. Al acabarse el tiempo aparece «Hora de descansar».')},
+ {e:'🎲',t:APPS.family.n,d:L4('لاعبان على نفس الجهاز يتناوبان على 10 أسئلة. من يجمع نقاطًا أكثر يفوز.','Deux joueurs sur le même appareil répondent à tour de rôle à 10 questions. Le plus de points gagne.','Two players on the same device take turns with 10 questions. Most points wins.','Dos jugadores en el mismo dispositivo se turnan 10 preguntas. Gana quien tenga más puntos.')},
+ {e:'🎹',t:APPS.music.n,d:L4('اعزف على الإكسيليفون وسجّل لحنك، تعلّم أغنية بتتبّع المفتاح الذي يلمع، أو اعزف على الطبول.','Joue du xylophone et enregistre ta mélodie, apprends une chanson en suivant la touche qui brille, ou joue des percussions.','Play the xylophone and record your tune, learn a song by following the glowing key, or play the drums.','Toca el xilófono y graba tu melodía, aprende una canción siguiendo la tecla que brilla o toca los tambores.')},
+ {e:'📖',t:APPS.stories.n,d:L4('قصة «ياسين والنجمة اللي طاحت» مع اختيار للطريق، وأسئلة في النهاية.','L’histoire « Yassine et l’étoile tombée », avec un choix de chemin et des questions à la fin.','The story “Yassine and the Fallen Star”, with a choice of path and questions at the end.','El cuento «Yassine y la estrella caída», con un camino a elegir y preguntas al final.')},
+ {e:'👶',t:APPS.firstword.n,d:L4('للصغار جدًا: صور كبيرة وكلمات. يمكن للوالدين تسجيل أصواتهم للكلمات.','Pour les tout-petits : grandes images et mots. Les parents peuvent enregistrer leur voix.','For toddlers: big pictures and words. Parents can record their own voice.','Para los más pequeños: imágenes grandes y palabras. Los padres pueden grabar su voz.')},
+ {e:'🎉',t:APPS.events.n,d:L4('تعرّف على الأعياد والمناسبات، ثم أجب عن 6 أسئلة.','Découvre les fêtes et occasions, puis réponds à 6 questions.','Learn about holidays, then answer 6 questions.','Conoce las fiestas y responde 6 preguntas.')},
+ {e:'🗺️',t:APPS.morocco.n,d:L4('مدن المغرب ومعالمه وأطباقه وعلمه، مع أسئلة.','Les villes, monuments, plats et le drapeau du Maroc, avec des questions.','Morocco’s cities, landmarks, food and flag, with questions.','Ciudades, monumentos, platos y bandera de Marruecos, con preguntas.')},
+ {e:'🕌',t:APPS.prayer.n,d:L4('خطوات الوضوء، لعبة ترتيبها، والصلوات الخمس بعدد ركعاتها. تعلّمها مع الوالدين.','Les étapes des ablutions, un jeu pour les ordonner, et les 5 prières avec leurs rak‘as. À apprendre avec les parents.','Wudu steps, a game to put them in order, and the 5 prayers with their rak‘ahs. Learn with your parents.','Los pasos del wudu, un juego para ordenarlos y las 5 oraciones con sus rakats. Apréndelo con tus padres.')},
+ {e:'🔬',t:APPS.lab.n,d:L4('اخلط الألوان، توقّع هل يطفو الشيء أم يغرق، وهل يجذبه المغناطيس.','Mélange les couleurs, devine si l’objet flotte ou coule, et si l’aimant l’attire.','Mix colors, guess if things float or sink, and whether the magnet picks them up.','Mezcla colores, adivina si flota o se hunde, y si el imán lo atrae.')},
+ {e:'🗣️',t:APPS.langs.n,d:L4('كل كلمة بأربع لغات مع الصوت، ولعبة «كيف نقول…؟».','Chaque mot en 4 langues avec la voix, et le jeu « Comment dit-on… ? ».','Every word in 4 languages with sound, and the “How do you say…?” game.','Cada palabra en 4 idiomas con voz, y el juego «¿Cómo se dice…?».')},
+ {e:'🌻',t:APPS.garden.n,d:L4('ازرع البذور، واسقها عندما تعطش (💧)، واقطف الثمار عندما تنضج. الحديقة تبقى محفوظة.','Plante, arrose quand la plante a soif (💧), récolte quand c’est mûr. Le jardin reste enregistré.','Plant seeds, water them when they’re thirsty (💧), pick them when ripe. The garden is saved.','Planta, riega cuando tenga sed (💧) y cosecha cuando esté lista. El jardín se guarda.')},
+ {e:'🐱',t:APPS.pet.n,d:L4('اعتنِ بالقط مشمش: أطعمه، حمّمه، نوّمه والعب معه. اضغط عليه لتداعبه.','Occupe-toi de Michmich : nourris-le, lave-le, fais-le dormir et joue avec lui. Touche-le pour le caresser.','Look after Mishmish: feed, wash, put to sleep and play. Tap him to pet him.','Cuida a Mishmish: dale de comer, báñalo, hazlo dormir y juega con él. Tócalo para acariciarlo.')},
+ {e:'🧩',t:APPS.puzzle.n,d:L4('اختر صورة (أو صورتك من الجهاز) وحجم البوزل، ثم بدّل القطع حتى تكتمل.','Choisis une image (ou ta photo) et la taille, puis échange les pièces jusqu’à finir.','Pick a picture (or your own photo) and a size, then swap pieces until it’s complete.','Elige una imagen (o tu foto) y el tamaño, y cambia piezas hasta completarla.')},
+ {e:'🎬',t:APPS.film.n,d:L4('اختر خلفية وأضف شخصيات، اسحبها بإصبعك، وسجّل فيلمًا قصيرًا بصوتك ثم شاهده.','Choisis un décor, ajoute des personnages, déplace-les et enregistre un petit film avec ta voix.','Choose a background, add characters, drag them and record a short film with your voice.','Elige un fondo, añade personajes, muévelos y graba una peli con tu voz.')});
+
+/* ================= EXTRAS: daily mission, island treasure, parents ================= */
+addUI({mission:['مهمة نجمة اليوم','La mission de Najma','Najma’s mission today','La misión de Najma'],missionHint:['اربح نجمة في كل لعبة من هذه الألعاب','Gagne une étoile dans chacun de ces jeux','Win a star in each of these games','Gana una estrella en cada uno de estos juegos'],
+ missionDone:['أنجزت مهمة اليوم! +5 ⭐','Mission du jour réussie ! +5 ⭐','Today’s mission done! +5 ⭐','¡Misión del día cumplida! +5 ⭐'],
+ treasure:['كنز الجزيرة','Le trésor de l’île','Island treasure','El tesoro de la isla'],trNext:[n=>`${n} نجوم أخرى للكنز التالي`,n=>`Encore ${n} étoiles pour le prochain trésor`,n=>`${n} more stars for the next treasure`,n=>`${n} estrellas más para el próximo tesoro`],
+ trNew:['كنز جديد على الجزيرة!','Nouveau trésor sur l’île !','New treasure on the island!','¡Nuevo tesoro en la isla!'],trAll:['جمعت كل الكنوز! 🏆','Tu as tous les trésors ! 🏆','You found every treasure! 🏆','¡Tienes todos los tesoros! 🏆'],trHint:['كل 10 نجوم تفتح كنزًا يظهر على خريطة الجزيرة','Toutes les 10 étoiles, un trésor apparaît sur la carte','Every 10 stars unlocks a treasure that appears on the map','Cada 10 estrellas aparece un tesoro en el mapa'],
+ parents:['ركن الآباء','Espace parents','Parents’ corner','Rincón de los padres'],gateQ:[(a,b)=>`سؤال للكبار: كم يساوي ${a} × ${b}؟`,(a,b)=>`Question pour les grands : combien font ${a} × ${b} ?`,(a,b)=>`Grown-ups only: what is ${a} × ${b}?`,(a,b)=>`Solo para mayores: ¿cuánto es ${a} × ${b}?`],
+ ok:['تأكيد','Valider','Confirm','Confirmar'],wrongGate:['جواب خاطئ','Mauvaise réponse','Wrong answer','Respuesta incorrecta'],limitTitle:['وقت اللعب في اليوم','Temps de jeu par jour','Daily play time','Tiempo de juego al día'],noLimit:['بدون حد','Sans limite','No limit','Sin límite'],
+ mins:[n=>`${n} دقيقة`,n=>`${n} min`,n=>`${n} min`,n=>`${n} min`],usedToday:[n=>`الاستعمال اليوم: ${n} دقيقة`,n=>`Aujourd’hui : ${n} min`,n=>`Used today: ${n} min`,n=>`Hoy: ${n} min`],addTime:['＋15 دقيقة اليوم','＋15 min aujourd’hui','＋15 min today','＋15 min hoy'],
+ resetAll:['تصفير النجوم والتقدّم','Remettre étoiles et progrès à zéro','Reset stars and progress','Reiniciar estrellas y progreso'],confirm:['تأكيد؟','Sûr ?','Sure?','¿Seguro?'],done2:['تمّ','OK','Done','Hecho'],
+ report:['تقرير التقدّم (النجوم)','Progrès (étoiles)','Progress report (stars)','Progreso (estrellas)'],repToday:['اليوم','Aujourd’hui','Today','Hoy'],repTotal:['المجموع','Total','Total','Total'],repNone:['لا شيء بعد','Rien pour l’instant','Nothing yet','Nada aún'],
+ restTitle:['وقت الراحة!','C’est l’heure de la pause !','Break time!','¡Hora de descansar!'],restMsg:['لعبنا كثيرًا اليوم. هيا نتحرّك ونشرب الماء ونلعب بعيدًا عن الشاشة!','On a beaucoup joué aujourd’hui. Bougeons, buvons de l’eau et jouons loin de l’écran !','We played a lot today. Let’s move, drink some water and play away from the screen!','Hoy hemos jugado mucho. ¡A movernos, beber agua y jugar lejos de la pantalla!']});
+const today=()=>new Date().toISOString().slice(0,10);
+function lsGet(k,d){try{const v=JSON.parse(localStorage.getItem(k)||'null');return v==null?d:v}catch(e){return d}}function lsSet(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+let DAY=lsGet('yas_day',{});if(DAY.date!==today())DAY={date:today(),apps:{},bonus:false};let TOT=lsGet('yas_tot',{});
+
+/* daily mission: 3 games picked from the date */
+function missionApps(){const ids=Object.keys(APPS).filter(k=>k!=='firstword');let h=0;for(const ch of today())h=(h*31+ch.charCodeAt(0))%2147483647;const r=rnd(h||7);const pool=ids.slice();const out=[];while(out.length<3){out.push(pool.splice(Math.floor(r()*pool.length),1)[0])}return out}
+function buildMission(){const box=$('mission');box.innerHTML='';const ms=missionApps();const done=ms.filter(id=>(DAY.apps[id]||0)>0).length;
+  const h=el('div','mhead');h.append(el('span','mtitle','🌟 '+T('mission')),el('span','mcount',`${done}/3`));box.appendChild(h);
+  const r=el('div','row');ms.forEach(id=>{const a=APPS[id];const ok=(DAY.apps[id]||0)>0;const b=el('button','chip mchip'+(ok?' ok':''),(ok?'✅ ':a.e+' ')+tx(a.n));b.onclick=()=>{curZone=ZONES.find(z=>z.apps.includes(id));go(id)};r.appendChild(b)});box.appendChild(r);
+  box.appendChild(el('p','tdesc',DAY.bonus?T('missionDone'):T('missionHint')))}
+
+/* treasure decorations drawn on the island map */
+const DECOR=[
+ ['⛵',L4('مركب','Voilier','Sailboat','Velero'),'sea',-.95,.75],['🌈',L4('قوس قزح','Arc-en-ciel','Rainbow','Arcoíris'),'sky',-.55,-1.25],['🗼',L4('منارة','Phare','Lighthouse','Faro'),'land',.92,.2],['🐬',L4('دلفين','Dauphin','Dolphin','Delfín'),'sea',.95,.95],
+ ['🎈',L4('بالونات','Ballons','Balloons','Globos'),'sky',.35,-1.2],['🏰',L4('قصر','Château','Castle','Castillo'),'land',.15,-.62],['🦜',L4('ببغاء','Perroquet','Parrot','Loro'),'land',-.8,.1],['🐳',L4('حوت','Baleine','Whale','Ballena'),'sea',-1.12,-.35],
+ ['🎡',L4('دولاب','Grande roue','Big wheel','Noria'),'land',.32,.62],['🚂',L4('قطار','Train','Train','Tren'),'land',-.25,.7],['🛸',L4('صحن طائر','Soucoupe volante','UFO','Platillo volante'),'sky',.85,-1.3],['🎆',L4('ألعاب نارية','Feu d’artifice','Fireworks','Fuegos artificiales'),'sky',-.15,-1.35]];
+const decoCount=()=>Math.min(DECOR.length,Math.floor(stars/10));let seenDeco=lsGet('yas_deco',0);
+function drawDecor(t){const g=islandGeom(),n=decoCount(),dir=lang==='ar'?-1:1;for(let i=0;i<n;i++){const[e,,kind,fx2,fy]=DECOR[i];const x=g.cx+fx2*g.rx*dir,y=g.cy+fy*g.ry;
+  const bob=kind==='sea'?8*Math.sin(t*2+i):kind==='sky'?10*Math.sin(t*1.3+i):0;const sz=kind==='sky'?70:62;emoji(e,x+(e==='🛸'?30*Math.sin(t*.8):0),y+bob,sz)}}
+function buildTreasure(){const p=$('trGrid');p.innerHTML='';const n=decoCount();DECOR.forEach(([e,nm],i)=>{const d=el('div','stk'+(i<n?' got':''));d.textContent=i<n?e:'🔒';d.title=tx(nm);p.appendChild(d)});$('trInfo').textContent=n>=DECOR.length?T('trAll'):T('trNext',10-(stars%10));$('trHintP').textContent=T('trHint')}
+
+/* hook every star: credit the current game, check mission + treasure */
+const _addStar=addStar;
+addStar=function(n=1){_addStar(n);const id=APPS[mode]?mode:(mode==='done'&&APPS[lastApp]?lastApp:null);if(id){DAY.apps[id]=(DAY.apps[id]||0)+n;TOT[id]=(TOT[id]||0)+n;lsSet('yas_day',DAY);lsSet('yas_tot',TOT)}
+  const ms=missionApps();if(!DAY.bonus&&ms.every(x=>(DAY.apps[x]||0)>0)){DAY.bonus=true;lsSet('yas_day',DAY);setTimeout(()=>{_addStar(5);toast(T('missionDone'));fanfare();checkDeco()},900)}checkDeco()};
+function checkDeco(){const n=decoCount();if(n>seenDeco){seenDeco=n;lsSet('yas_deco',n);setTimeout(()=>{toast(T('trNew')+' '+DECOR[n-1][0]);fanfare()},700)}}
+
+/* parents */
+let PAR=lsGet('yas_par',{limit:0,day:'',secs:0,extra:0});
+function rollDay(){if(PAR.day!==today()){PAR.day=today();PAR.secs=0;PAR.extra=0;lsSet('yas_par',PAR)}if(DAY.date!==today()){DAY={date:today(),apps:{},bonus:false};lsSet('yas_day',DAY)}}
+function overLimit(){rollDay();return PAR.limit>0&&PAR.secs>=(PAR.limit+PAR.extra)*60}
+let gateAns=0,beforeGate='home';
+function openGate(){const a=3+Math.floor(Math.random()*6),b=3+Math.floor(Math.random()*6);gateAns=a*b;if(!['gate','parent'].includes(mode))beforeGate=mode;show('gate');$('gateQ').textContent=T('gateQ',a,b);$('gateIn').value='';$('gateMsg').textContent='';$('gateOk').textContent=T('ok');setTimeout(()=>$('gateIn').focus(),50)}
+$('gateOk').onclick=()=>{if(+$('gateIn').value===gateAns){buildParent();show('parent')}else{$('gateMsg').textContent=T('wrongGate');sfx(false)}};
+$('gateIn').addEventListener('keydown',e=>{if(e.key==='Enter')$('gateOk').click()});
+function buildParent(){rollDay();const p=$('parPane');p.innerHTML='';p.appendChild(el('p','q',T('limitTitle')));const r=el('div','row');[0,15,30,45,60,90].forEach(m=>{const b=el('button','chip',m?T('mins',m):T('noLimit'));b.setAttribute('aria-pressed',String(PAR.limit===m));b.onclick=()=>{PAR.limit=m;lsSet('yas_par',PAR);buildParent()};r.appendChild(b)});p.appendChild(r);
+  p.appendChild(el('p','tdesc',T('usedToday',Math.round(PAR.secs/60))));const r2=el('div','row');const at=el('button','candy alt',T('addTime'));at.onclick=()=>{PAR.extra+=15;lsSet('yas_par',PAR);toast('＋15');buildParent()};r2.appendChild(at);
+  const rs=el('button','candy alt',T('resetAll'));rs.onclick=()=>{if(rs.dataset.sure){stars=0;$('starN').textContent=0;TOT={};DAY={date:today(),apps:{},bonus:false};seenDeco=0;['yas_stars','yas_tot','yas_day','yas_deco'].forEach(k=>{try{localStorage.removeItem(k)}catch(e){}});buildParent()}else{rs.dataset.sure='1';rs.textContent=T('confirm');setTimeout(()=>{delete rs.dataset.sure;rs.textContent=T('resetAll')},2500)}};r2.appendChild(rs);
+  const dn=el('button','candy',T('done2'));dn.onclick=()=>go(overLimit()?'rest':(beforeGate==='rest'?'home':beforeGate));r2.appendChild(dn);p.appendChild(r2);
+  p.appendChild(el('p','q',T('report')));const ids=Object.keys(APPS).filter(k=>TOT[k]).sort((a,b)=>TOT[b]-TOT[a]);if(!ids.length)p.appendChild(el('p','tdesc',T('repNone')));
+  else{const tb=el('div','report');ids.forEach(id=>{const row=el('div','rrow');row.append(el('span','',APPS[id].e+' '+tx(APPS[id].n)),el('span','num',`${T('repToday')}: ${DAY.apps[id]||0}`),el('span','num',`${T('repTotal')}: ${TOT[id]}`));tb.appendChild(row)});p.appendChild(tb)}}
+$('parBtn').onclick=openGate;$('restParent').onclick=openGate;$('starsBtn').onclick=()=>{if(mode!=='rest')go('treasure')};
+setInterval(()=>{if(document.visibilityState!=='visible'||['rest','gate','parent'].includes(mode))return;rollDay();PAR.secs+=10;lsSet('yas_par',PAR);if(overLimit())go('rest')},10000);
+
+/* ---------- guide ---------- */
+const GUIDE=[
+ {e:'🏝️',t:L4('الجزيرة','L’île','The island','La isla'),d:L4('اضغط على مكان في الخريطة أو على البطاقات تحتها: قرية ياسين، شاطئ المرح، غابة الحكايات، جبل الاكتشاف، وادي الاهتمام. في كل مكان ألعاب.','Touche un endroit sur la carte ou une carte en dessous : le village, la plage, la forêt, la montagne, la vallée. Chaque endroit a ses jeux.','Tap a place on the map or a card below it: the village, the beach, the forest, the mountain, the valley. Each place has its own games.','Toca un lugar del mapa o una tarjeta debajo: el pueblo, la playa, el bosque, la montaña, el valle. Cada lugar tiene sus juegos.')},
+ {e:'⭐',t:L4('نجمة والنجوم','Najma et les étoiles','Najma and the stars','Najma y las estrellas'),d:L4('نجمة صديقة ياسين، نجمة صغيرة سقطت من السماء. كل جواب صحيح أو مهمة منجزة يعطيك نجومًا، وعددها في الأعلى.','Najma, l’amie de Yassine, est une petite étoile tombée du ciel. Chaque bonne réponse ou tâche réussie te donne des étoiles, comptées en haut.','Najma, Yassine’s friend, is a little star that fell from the sky. Every right answer or finished task gives you stars, counted at the top.','Najma, la amiga de Yassine, es una estrellita caída del cielo. Cada acierto o tarea hecha te da estrellas, que se cuentan arriba.')},
+ {e:'😊',t:APPS.feel.n,d:L4('تعرّف على 6 مشاعر، العب «كيف يشعر ياسين؟»، وتنفّس بهدوء مع البالونة.','Découvre 6 émotions, joue à « Comment se sent Yassine ? » et respire calmement avec le ballon.','Discover 6 feelings, play “How does Yassine feel?” and breathe calmly with the balloon.','Descubre 6 emociones, juega a «¿Cómo se siente Yassine?» y respira tranquilo con el globo.')},
+ {e:'⏰',t:APPS.routine.n,d:L4('علّم على مهامك في الصباح والمساء (نجمة لكل مهمة كل يوم)، واستعمل مؤقّت الأسنان لدقيقتين.','Coche tes tâches du matin et du soir (une étoile par tâche chaque jour) et utilise le minuteur de 2 minutes pour les dents.','Tick your morning and evening tasks (a star per task each day) and use the 2-minute tooth timer.','Marca tus tareas de la mañana y de la noche (una estrella por tarea cada día) y usa el temporizador de dientes de 2 minutos.')},
+ {e:'🚦',t:APPS.safe.n,d:L4('8 مواقف: اختر التصرّف الآمن واقرأ لماذا. في الأسفل أرقام الطوارئ في المغرب.','8 situations : choisis le bon geste et lis pourquoi. En bas, les numéros d’urgence au Maroc.','8 situations: pick the safe choice and read why. Emergency numbers in Morocco are at the bottom.','8 situaciones: elige lo seguro y lee por qué. Abajo están los números de emergencia de Marruecos.')},
+ {e:'🏃',t:APPS.move.n,d:L4('6 تمارين، كل واحد 20 ثانية. قلّد ياسين!','6 exercices de 20 secondes. Imite Yassine !','6 exercises of 20 seconds. Copy Yassine!','6 ejercicios de 20 segundos. ¡Imita a Yassine!')},
+ {e:'🤖',t:APPS.robot.n,d:L4('أضف الأسهم ثم اضغط ▶ ليمشي الروبو حتى نجمة دون أن يصطدم بالصخور. 8 مستويات. اضغط على سهم في البرنامج لحذفه.','Ajoute des flèches puis touche ▶ pour que le robot rejoigne Najma sans toucher les rochers. 8 niveaux. Touche une flèche du programme pour l’enlever.','Add arrows then tap ▶ so the robot reaches Najma without hitting rocks. 8 levels. Tap an arrow in the program to remove it.','Añade flechas y toca ▶ para que el robot llegue hasta Najma sin chocar con las rocas. 8 niveles. Toca una flecha del programa para quitarla.')},
+ {e:'🧮',t:APPS.math.n,d:L4('10 أسئلة: العدّ، الجمع، الطرح، والمقارنة بالصور.','10 questions : compter, additionner, soustraire et comparer avec des images.','10 questions: counting, adding, taking away and comparing with pictures.','10 preguntas: contar, sumar, restar y comparar con dibujos.')},
+ {e:'🚧',t:L4('قيد البناء','En construction','Coming soon','En construcción'),d:L4('الألعاب التي عليها 🚧 ستأتي في التحديثات القادمة، دون تغيير الرابط.','Les jeux marqués 🚧 arrivent dans les prochaines mises à jour, avec le même lien.','Games marked 🚧 arrive in future updates, with the same link.','Los juegos marcados con 🚧 llegarán en próximas actualizaciones, con el mismo enlace.')}];
+GUIDE2_ADD();
+function buildGuide(){const box=$('guideList');box.innerHTML='';GUIDE.forEach(g=>{const li=document.createElement('li');const ic=document.createElement('div');ic.className='gic';ic.textContent=g.e;const d=document.createElement('div');const h=document.createElement('h3');h.textContent=tx(g.t);const p=document.createElement('p');p.textContent=tx(g.d);d.append(h,p);li.append(ic,d);box.appendChild(li)})}
+
+/* ---------- navigation ---------- */
+let mode='home';const SHEETS=['home','zone','feel','move','robot','routine','safe','math','done','guide','gen','treasure','gate','parent','rest'];const APPMODES=['feel','move','robot','routine','safe','math',...Object.keys(NA)];
+function show(m){mode=m;const sh=NA[m]?'gen':m;SHEETS.forEach(k=>$('s-'+k).hidden=k!==sh);$('back').hidden=m==='home'||m==='rest';
+  $('ttl').textContent=m==='home'?T('app'):m==='zone'?tx(curZone.n):APPMODES.includes(m)?tx(APPS[m].n):m==='done'?T('result'):m==='treasure'?T('treasure'):(m==='gate'||m==='parent')?T('parents'):m==='rest'?T('restTitle'):T('guide');
+  setMood(['music','film','firstword','rest','gate','parent'].includes(m)?null:m==='treasure'?'home':m==='home'||m==='zone'?'home':['feel','routine','guide','stories','prayer','pet','garden','events','morocco','langs','lab'].includes(m)?'learn':m==='done'?'party':'play');resize()}
+function go(m){if(!['rest','gate','parent'].includes(m)&&overLimit())m='rest';if(m!=='move')MV.on=false;if(m!=='feel')FL.br=null;if(m!=='routine'&&RTS.teeth&&!RTS.teeth.done)RTS.teeth=null;if('speechSynthesis' in window)speechSynthesis.cancel();MUS.duck=1;musicLevel();
+  show(m);if(m==='home'){buildHome();buildMission()}if(m==='treasure')buildTreasure();if(m==='rest'){$('restT').textContent=T('restTitle');$('restM').textContent=T('restMsg');$('restParent').textContent=T('parents')}if(m==='zone')buildZone();if(m==='guide')buildGuide();if(m==='feel')buildFeel();if(m==='move')buildMove();if(m==='robot')buildRobot();if(m==='routine')buildRoutine();if(m==='safe')buildSafe();if(m==='math')buildMath();if(m==='family')FM=null;if(m==='stories'){ST.pg='p1';ST.qi=-1;ST.t0=now()}if(NA[m])NA[m].build()}
+$('back').onclick=()=>go((mode==='gate'||mode==='parent')?(overLimit()?'rest':beforeGate):['zone','guide','treasure'].includes(mode)?'home':curZone?'zone':'home');
+$('again').onclick=()=>go(lastApp||'home');$('back2').onclick=()=>go(curZone?'zone':'home');$('helpBtn').onclick=()=>go('guide');
+
+/* ---------- language & music buttons ---------- */
+function applyLang(){document.documentElement.lang=lang;$('app').dir=lang==='ar'?'rtl':'ltr';$('langBtn').querySelector('span').textContent=T('langBtn');
+  document.querySelectorAll('#langMenu button').forEach(b=>b.setAttribute('aria-current',String(b.dataset.l===lang)));$('again').textContent=T('again');$('back2').textContent=T('backPlace');
+  $('mvStart').textContent=T('start');$('mvSkip').textContent=T('next');$('rbNext').textContent=T('rbNext');$('back').innerHTML=lang==='ar'?'&#8594;':'&#8592;';$('back').setAttribute('aria-label',T('back'));$('helpBtn').setAttribute('aria-label',T('guide'));$('parBtn').setAttribute('aria-label',T('parents'));paintMusic()}
+function paintMusic(){const b=$('musBtn');b.innerHTML=MUS.on?'🎵':'🔇';b.setAttribute('aria-label',MUS.on?T('musicOn'):T('musicOff'))}
+$('musBtn').onclick=()=>{audioInit();MUS.on=!MUS.on;try{localStorage.setItem('yas_music',MUS.on?'on':'off')}catch(e){}musicLevel();paintMusic()};
+$('langBtn').onclick=e=>{e.stopPropagation();$('langMenu').hidden=!$('langMenu').hidden};
+document.querySelectorAll('#langMenu button').forEach(b=>b.onclick=()=>{$('langMenu').hidden=true;if(b.dataset.l===lang)return;lang=b.dataset.l;try{localStorage.setItem('yas_lang',lang)}catch(e){}applyLang();if(mode==='done')show('done');else if(mode==='parent'){buildParent();show('parent')}else if(mode==='gate')openGate();else go(mode)});
+document.addEventListener('click',e=>{if(!e.target.closest('#langMenu')&&!e.target.closest('#langBtn'))$('langMenu').hidden=true});
+
+/* ---------- loop ---------- */
+function resize(){const r=$('stage').getBoundingClientRect();const d=Math.min(window.devicePixelRatio||1,2);cv.width=Math.max(1,Math.round(r.width*d));cv.height=Math.max(1,Math.round(r.height*d));K=cv.height/1000;W=cv.width/K;H=1000}
+new ResizeObserver(resize).observe($('stage'));window.addEventListener('resize',resize);
+function loop(){const t=now();c.setTransform(K,0,0,K,0,0);c.clearRect(0,0,W,H);
+  try{if(mode==='home')drawIsland(t);else if(mode==='zone'&&curZone)drawZone(t);else if(mode==='feel')drawFeel(t);else if(mode==='move')drawMove(t);else if(mode==='robot')drawRobot(t);else if(mode==='routine')drawRoutine(t);else if(mode==='safe')drawSafe(t);else if(mode==='math')drawMath(t);else if(NA[mode])NA[mode].draw(t);
+    else if(mode==='done'){vgrad(0,H,[[0,'#3bc9db'],[1,'#ffe8a3']]);confetti(t,0,90);yassine(W/2-Math.min(140,W*.12),930,Math.min(1,W/700),t,{jump:60*bounce(t),mood:'happy'});najma(W/2+Math.min(200,W*.18),420,.9,t)}
+    else if(mode==='treasure'){drawIsland(t);label(T('treasure'),W/2,80,Math.min(70,W*.08),'#ffd43b','#0b3d4a')}
+    else if(mode==='rest'){vgrad(0,H,[[0,'#ffb26b'],[.6,'#ffe0b2'],[1,'#b2f2bb']]);sun(W*.8,300,70,t);hill(760,30,1.2,.5,'#8ce99a');['🏃','💧','🌳','⚽'].forEach((e,i)=>emoji(e,W/2+(i-1.5)*Math.min(240,W*.2),300+20*Math.sin(t*2+i),Math.min(100,W*.11)));yassine(W/2,930,Math.min(1,W/700),t,{mood:'calm',wave:.05});najma(W/2+Math.min(240,W*.22),520,.7,t)}
+    else if(mode==='gate'||mode==='parent'){zoneBg(ZONES[0],t);yassine(W/2-Math.min(120,W*.1),930,Math.min(1,W/700),t,{wave:.05})}
+    else if(mode==='guide'){zoneBg(ZONES[0],t);yassine(W/2-Math.min(120,W*.1),930,Math.min(1,W/700),t,{});najma(W/2+Math.min(200,W*.18),380,.8,t)}
+    if(t<fx.until&&mode!=='done')confetti(t,fx.start,80)}catch(e){console.error(e)}
+  requestAnimationFrame(loop)}
+$('starN').textContent=stars;applyLang();go('home');resize();requestAnimationFrame(loop);
+if('serviceWorker' in navigator&&location.protocol.startsWith('http')){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{}));let _had=!!navigator.serviceWorker.controller,_rl=false;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(_had&&!_rl){_rl=true;location.reload()}})}
+try{if(!localStorage.getItem('yas_hint')){localStorage.setItem('yas_hint','1');setTimeout(()=>toast(T('tapPlace')),1500)}}catch(e){}
+
+</script>
+</body>
+</html>
